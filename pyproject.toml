@@ -1,0 +1,16 @@
+[project]
+name = "legsynth"
+version = "0.1.0"
+description = "Durability-aware synthesis of planar walking linkages"
+requires-python = ">=3.9"
+dependencies = ["numpy", "scipy", "matplotlib", "pillow", "pymoo"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["legsynth"]

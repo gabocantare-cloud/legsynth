@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+.venv/
+env/
+.env
+*.egg-info/
+.pytest_cache/
+papers/
+
+# Generated results. Two things a reviewer should get without a 20-minute run are
+# kept: the JSON the published numbers are quoted from, and the CAD deliverables.
+# Everything else regenerates.
+results/*
+!results/*.json
+!results/cad/
+
+# --quick is a smoke test. Its outputs are never the published ones, so they
+# never get committed.
+results/*quick*
+results/cad/*quick*

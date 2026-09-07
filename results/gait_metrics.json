@@ -1,0 +1,133 @@
+{
+  "source": "legsynth scripts/gait_report.py",
+  "branch": [
+    -1,
+    -1,
+    1,
+    -1,
+    1
+  ],
+  "n_samples": 3600,
+  "lengths": {
+    "a": 38.0,
+    "b": 41.5,
+    "c": 39.3,
+    "d": 40.1,
+    "e": 55.8,
+    "f": 39.4,
+    "g": 36.7,
+    "h": 65.7,
+    "i": 49.0,
+    "j": 50.0,
+    "k": 61.9,
+    "l": 7.8,
+    "m": 15.0
+  },
+  "path_height_mm": 22.457161229910994,
+  "path_width_mm": 67.9084018009337,
+  "default_band": 0.01,
+  "ours": {
+    "step_length": 43.49018724745394,
+    "ground_clearance": 22.23258961761188,
+    "stance_flatness": 0.001120015836572533,
+    "velocity_ripple": 0.09182257954535783,
+    "duty_factor": 0.31194444444444447
+  },
+  "paper": {
+    "step_length": 43.3,
+    "ground_clearance": 25.7,
+    "stance_flatness": 0.0281,
+    "velocity_ripple": 0.0956,
+    "duty_factor": 0.2
+  },
+  "sweep": [
+    {
+      "band": 0.002,
+      "tol_mm": 0.04491432245982199,
+      "step_length": 10.193415555661609,
+      "ground_clearance": 22.412246907451177,
+      "stance_flatness": 0.0013520030230624578,
+      "velocity_ripple": 0.033767210412707346,
+      "duty_factor": 0.07972222222222222
+    },
+    {
+      "band": 0.005,
+      "tol_mm": 0.11228580614955497,
+      "step_length": 38.876923323833026,
+      "ground_clearance": 22.344875423761437,
+      "stance_flatness": 0.0007317684526756897,
+      "velocity_ripple": 0.08298964317887642,
+      "duty_factor": 0.27694444444444444
+    },
+    {
+      "band": 0.01,
+      "tol_mm": 0.22457161229910994,
+      "step_length": 43.49018724745394,
+      "ground_clearance": 22.23258961761188,
+      "stance_flatness": 0.001120015836572533,
+      "velocity_ripple": 0.09182257954535783,
+      "duty_factor": 0.31194444444444447
+    },
+    {
+      "band": 0.02,
+      "tol_mm": 0.44914322459821987,
+      "step_length": 49.23827332290684,
+      "ground_clearance": 22.008018005312778,
+      "stance_flatness": 0.00213139241326629,
+      "velocity_ripple": 0.10479245498135348,
+      "duty_factor": 0.35777777777777775
+    },
+    {
+      "band": 0.03,
+      "tol_mm": 0.6737148368973298,
+      "step_length": 53.20737684553073,
+      "ground_clearance": 21.783446393013662,
+      "stance_flatness": 0.0031233151711443715,
+      "velocity_ripple": 0.11650092005863863,
+      "duty_factor": 0.39166666666666666
+    },
+    {
+      "band": 0.05,
+      "tol_mm": 1.1228580614955497,
+      "step_length": 58.71467590896057,
+      "ground_clearance": 21.334303168415445,
+      "stance_flatness": 0.0049896294102399425,
+      "velocity_ripple": 0.1404007246525264,
+      "duty_factor": 0.4438888888888889
+    },
+    {
+      "band": 0.08,
+      "tol_mm": 1.7965728983928795,
+      "step_length": 63.867649612735065,
+      "ground_clearance": 20.660588331518113,
+      "stance_flatness": 0.007663158081474309,
+      "velocity_ripple": 0.1834594635224708,
+      "duty_factor": 0.5047222222222222
+    },
+    {
+      "band": 0.12,
+      "tol_mm": 2.694859347589319,
+      "step_length": 67.30419440129235,
+      "ground_clearance": 19.76230188232168,
+      "stance_flatness": 0.011307883615074437,
+      "velocity_ripple": 0.2626597891007585,
+      "duty_factor": 0.5716666666666667
+    },
+    {
+      "band": 0.2,
+      "tol_mm": 4.491432245982199,
+      "step_length": 67.9084018009337,
+      "ground_clearance": 17.9657289839288,
+      "stance_flatness": 0.019079051655582102,
+      "velocity_ripple": 0.3607091571642313,
+      "duty_factor": 0.6775
+    }
+  ],
+  "band_required_for_paper_value": {
+    "step_length": 0.009773781718338148,
+    "ground_clearance": NaN,
+    "stance_flatness": 0.31169465827059484,
+    "velocity_ripple": 0.012711081609728902,
+    "duty_factor": 0.003464342788966444
+  }
+}
