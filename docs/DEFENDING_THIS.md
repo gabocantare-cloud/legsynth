@@ -19,10 +19,14 @@ to the hard half of them.
 We re-implemented a June 2026 paper that re-optimizes Theo Jansen's walking linkage to trade
 gait quality against joint wear, and which released no code. The paper's central claim — that
 Jansen's linkage is Pareto-dominated, that you can beat it on smoothness *and* wear at the
-same time — reproduces cleanly. Three of its supporting numbers do not, and one of its
-methodological shortcuts turns out to cost about fifteen times what it claims. We also added
-the check the paper never makes: a linkage that binds on itself is a wear problem, and nobody
-tested for it. That check came back negative, which we report as a negative.
+same time — reproduces cleanly, and survives a four-fold change in the one definitional choice
+everything rests on. Three of its supporting numbers do not reproduce, and its baseline row
+turns out to be unreachable by any single consistent model — from the stance side and from the
+geometry side independently. One of its methodological shortcuts costs about fifteen times
+what it claims, and worse, moves where the optimum sits. We also added the check the paper
+never makes: a linkage that binds on itself is a wear problem, and nobody tested for it. That
+check came back negative at the standard threshold, which we report as a negative — and then
+swept the threshold to find where it stops being free.
 
 ---
 
@@ -174,9 +178,9 @@ these five bands would agree. They span 90×. Step length and velocity ripple ag
 about 1%, which is a genuine reproduction and is why 1% was adopted; the other three do not.
 
 And the ground clearance is not a threshold question at all: 25.7 mm is taller than our
-entire foot path is tall (22.46 mm). No stance rule can produce it, so it points at different
-link lengths or an unstated normalization. That one is still open, and saying so is better
-than inventing an explanation.
+entire foot path is tall (22.46 mm). No stance rule can produce it — so the obvious next
+suspect is different link lengths, and **that was tested and refuted** rather than left as a
+shrug. See Finding 6.
 
 **If they push.** "Couldn't you just tune your band to match him?" Yes, to any *one* of his
 numbers, and that is precisely the point — you cannot match more than one at a time, and
@@ -215,6 +219,67 @@ from Jansen's 22.2 mm down to roughly 19 mm, and stops only because the 0.85× c
 stops it. Nothing in either objective rewards lifting the foot higher. That is a fair
 criticism of the paper's objective set — and it is a criticism of ours too, because we
 reproduced it deliberately rather than quietly improving it.
+
+---
+
+## Finding 6 — The ground-clearance gap, closed by elimination
+
+**One line.** The paper's 25.7 mm ground clearance cannot come from a stance rule, cannot
+come from a small link-length change, and cannot come from a large one either — three
+independent roads, all blocked, which together say Table 4's Jansen row is not the output of
+any single consistent model.
+
+**Why this one is worth rehearsing.** It is the finding most likely to draw "so what do you
+think actually happened?", and the right answer is a confident *I ruled these out and I am
+not going to invent the rest*. That is a better answer than a plausible story, and knowing
+why is the point of the section.
+
+**Road 1 — not a definition.** Ground clearance is bounded above by the total height of the
+foot path, and Jansen's path is 22.46 mm tall. 25.7 mm does not fit inside it under any
+stance rule whatsoever. This is arithmetic, not modelling.
+
+**Road 2 — not a small geometry change, which is the surprising one.** The obvious suspect is
+that the paper used slightly different link lengths. So: what is the *smallest* perturbation
+of the holy numbers that lands the clearance? Least squares from Jansen itself says two links
+move by about a tenth of a millimetre (`c` by −0.107 mm, `k` by +0.136 mm) and the other eight
+by less than 0.05 mm — which is below the rounding implied by the holy numbers' own 0.1 mm
+precision. That perturbation gives **25.71 mm**, matching the paper to 0.06%.
+
+That sounds like the answer, and it is not, because of what it costs. Along that direction
+clearance and step length are anti-correlated: the step drops from 43.41 mm to **41.13 mm**, a
+5% miss on the paper's 43.3 mm — and the step length is one of the two numbers we *do*
+reproduce. You can have either of the paper's geometric numbers from a linkage
+indistinguishable from Jansen at published precision. You cannot have both.
+
+The physical content is worth stating on its own: **the foot path height near Jansen is
+extraordinarily sensitive to the link lengths.** A tenth of a millimetre in two bars changes
+the height of the whole path by 15%. If you were machining one, that is a tolerance you would
+want to know about before you cut.
+
+**Road 3 — not a large geometry change either.** Searching the paper's whole ±30% box does
+find a linkage that produces both numbers essentially exactly (step 43.34 mm, clearance
+25.70 mm), sitting 23.8% from Jansen. But it has to survive the metrics that already agree,
+and it does not: its velocity ripple is **0.0402 against the paper's 0.0956**, 58% off, where
+our Jansen reproduces that ripple to 3.8%. Whatever Table 4 describes, it is not that
+mechanism.
+
+**Why it is not an artefact.** Two methodological points, both of which I got wrong first and
+fixed, and both worth volunteering if pushed on rigour:
+
+* The fit originally minimised at 360 crank samples and reported at 1440, so the number the
+  optimizer drove down and the number printed underneath it were not the same quantity. They
+  are now the same count.
+* Differential evolution's built-in polish runs L-BFGS-B on the *norm* of the two residuals,
+  and a norm has a kink exactly at zero — precisely where the answer is. The verdict is
+  decided by least squares on the residual *components* instead, which has no such problem.
+  With ten link lengths and two targets, exact solutions form an eight-dimensional surface, so
+  a local solver that stalls from many starts is real evidence, not a tired optimizer.
+
+**The honest limit.** Stage 2 of the study swept a penalty trading fit against closeness to
+Jansen and found nothing closer than 23.8%. That is "we did not find one closer", not "none
+exists" — the penalised objective is rugged and the sweep's own results are not monotone in
+the penalty weight. The write-up says so. What is established is the existence at 23.8% and
+the refutation by ripple, not a proven minimum distance.
 
 ---
 
@@ -268,10 +333,19 @@ search *starts*, not what counts as good, which is still decided by the objectiv
 constraints alone. It is necessary because 0 of 600 uniformly sampled designs are feasible —
 see Finding 5. It is a documented deviation; the paper does not say how it initialised.
 
-**"What would you do with another week?"** Close the ground-clearance gap: solve directly for
-the link set nearest the holy numbers that gives both 43.3 mm step length and 25.7 mm
-clearance. If a solution exists within a few percent of Jansen, that explains the paper's
-number. If none exists, that is a stronger statement than "we cannot reproduce it".
+**"What would you do with another week?"** Add ground clearance as a third objective. Every
+design on our front trades it away — from Jansen's 22.2 mm down to about 19 mm — and stops
+only because the 0.85× constraint stops it, because nothing in either objective rewards
+lifting the foot higher. Finding 6 makes that sharper than a preference: clearance and step
+length are *directly* anti-correlated near Jansen, so it is a genuine third axis of the
+trade-off rather than a quantity that comes along for free. Reproducing the paper's
+two-objective setup was the right call for a reproduction; the three-objective version is the
+next piece of actual work, and it is a paper rather than a commit.
+
+**"And with another day?"** Locate the knee in §7.3 properly. The threshold sweep goes
+40 → 45 → 50 → 55 and all the interesting behaviour is between the first two — free at one
+end, 11% of the achievable improvement at the other. Sampling every degree between them would
+turn "free at 40°, expensive by 45°" into an exact number.
 
 **"What is the weakest part of this repo?"** The wear model is Archard with a single unknown
 coefficient and a quasi-static force solve — no lubrication regime, no surface finish, no

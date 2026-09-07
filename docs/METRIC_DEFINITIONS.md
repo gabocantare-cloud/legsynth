@@ -139,10 +139,13 @@ Two further observations, offered as evidence rather than accusation:
 
 - **Ground clearance cannot be a definition problem at all.** Clearance is bounded above by
   the total path height, and this path is 22.46 mm tall. No stance rule, no tolerance and no
-  reasonable formula can extract 25.7 mm of clearance from it. Either the paper measured a
-  linkage with slightly different link lengths from the holy numbers we used, or it normalized
-  clearance against something it did not state. This one is worth chasing separately; it is
-  not covered by the stance question.
+  reasonable formula can extract 25.7 mm of clearance from it. The obvious remaining
+  explanation — that the paper measured a linkage with slightly different link lengths — was
+  chased separately and **refuted**: see §8 of [`RESULTS.md`](RESULTS.md). Briefly, a
+  perturbation below the holy numbers' own 0.1 mm precision does land the clearance at
+  25.71 mm, but it costs 5% of the step length; and the linkage that hits both geometric
+  numbers exactly sits 23.8% from Jansen with a velocity ripple 58% from the paper's. The
+  geometry side reaches the same verdict as this page does from the stance side.
 - **The duty factor is the only entry in Table 4 written as "approximately".** Every other
   value carries three significant figures. A plausible reading is that ≈20% is a quoted
   Strandbeest design convention carried into the table rather than a number measured by the

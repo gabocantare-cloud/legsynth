@@ -101,8 +101,15 @@ disagreements, and his 25.7 mm ground clearance exceeds our entire 22.46 mm path
 cannot be a definition issue at all. Full argument in `docs/METRIC_DEFINITIONS.md`, pinned by
 `test_no_single_band_reproduces_the_papers_table`. **Do not tune the band to close these gaps.**
 
-**Still open:** the ground-clearance gap. It is geometry, not definition — most likely
-slightly different link lengths from the holy numbers, or an unstated normalization.
+**The ground-clearance gap is closed** — by ruling things out, which is the only way the
+evidence allowed. §8 of `docs/RESULTS.md`, from `scripts/clearance_fit.py`. Three roads, all
+blocked: it is not a stance definition (25.7 mm exceeds the whole path height); it is not a
+small geometry change (a perturbation below the holy numbers' own 0.1 mm precision lands the
+clearance at 25.71 mm, but costs 5% of the step length, which we otherwise reproduce); and it
+is not a large one (a linkage 23.8% away gives both numbers exactly, but its velocity ripple
+is 58% from the paper's, and the ripple is a number we do reproduce). Same conclusion as the
+stance side reaches: Table 4's Jansen row is not the output of any single consistent model.
+Do not replace this with a guess about what the author "probably" did.
 
 `legsynth/dynamics.py` — quasi-static inverse dynamics, verified:
 

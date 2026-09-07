@@ -74,6 +74,14 @@ A factor of 90 apart. Step length and ripple agree tightly at ≈1% and are a ge
 reproduction; the rest are not, and the 25.7 mm clearance is taller than our entire 22.46 mm
 foot path, so it cannot be a threshold question at all.
 
+**The obvious escape hatch — "he must have used slightly different link lengths" — is tested
+and closed.** A perturbation of the holy numbers *smaller than their own published precision*
+on eight of ten links does land the clearance at 25.71 mm, but it costs 5% of the step length,
+which we otherwise reproduce. A linkage 23.8% away hits both geometric numbers exactly, but
+misses the velocity ripple by 58%. Three roads, all blocked, from different directions:
+Table 4's Jansen row is not the output of any single consistent model.
+[`docs/RESULTS.md`](docs/RESULTS.md) §8.
+
 ### 2. The paper's mean-force wear shortcut costs 51%, not the 3–4% it claims
 
 The paper averages the pin force over the cycle before applying Archard's law. Integrating
@@ -149,7 +157,8 @@ objectives are ratios to Jansen, so Jansen sits at exactly (1.00, 1.00), lower i
 ![Pareto fronts](figures/pareto.png)
 
 **The paper's central claim reproduces: Jansen's linkage is Pareto-dominated.** All 20 designs
-on the front beat it on gait error *and* wear at once. The magnitude does not reproduce:
+on the front beat it on gait error *and* wear at once — and it stays dominated when the stance
+band is halved or doubled, every design on every front. The magnitude does not reproduce:
 
 | Claim | Paper | Ours |
 |---|---|---|

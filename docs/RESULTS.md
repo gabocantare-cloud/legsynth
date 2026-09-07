@@ -512,4 +512,117 @@ closed. That strengthens §6 rather than weakening it.
 > keeping: a parameter that is threaded through one code path and silently
 > defaulted on another produces plausible numbers, not a crash.
 
+---
+
+## 8. The ground-clearance gap, closed
+
+This was the last open discrepancy in the repo. §1 reports the paper's 25.7 mm of
+ground clearance against our 22.23 mm, and notes that it cannot be a stance-definition
+problem because 25.7 mm does not fit inside our 22.46 mm foot path at all.
+`METRIC_DEFINITIONS.md` then blamed "slightly different link lengths, or an unstated
+normalization" and stopped. That is a hypothesis, not an answer, so
+`scripts/clearance_fit.py` tests it.
+
+The question, made precise: **is there a set of link lengths that produces both 43.3 mm
+of step length and 25.7 mm of ground clearance, and how far from Jansen is it?**
+
+### 8.1 The clearance alone is reachable inside the published precision
+
+Before searching the whole box, ask the sharper question: what is the *smallest*
+perturbation of the holy numbers that lands the clearance? A least-squares step
+starting from Jansen itself answers it.
+
+| Link | Jansen | Fitted | Change |
+|---|---|---|---|
+| `c` | 39.30 | 39.1934 | **−0.107 mm** |
+| `k` | 61.90 | 62.0357 | **+0.136 mm** |
+| `b, d, e, f, g, h, i, j` | | | all below 0.05 mm |
+
+The holy numbers are published to 0.1 mm, so rounding alone admits ±0.05 mm on every
+link. **Eight of the ten move by less than that** — they are not a different linkage,
+they are the same linkage written down to one more decimal place. The other two move by
+about a tenth of a millimetre.
+
+That perturbation takes ground clearance from 22.23 mm to **25.71 mm**, reproducing the
+paper's 25.7 mm to **0.06%**.
+
+So the foot path near Jansen is extraordinarily sensitive in this direction: a tenth of
+a millimetre in two links buys three and a half millimetres of lift, a 15% change in the
+total height of the path. That alone is worth knowing before anyone machines one.
+
+**But the lift is paid for out of the stride.** Walking from Jansen along that direction:
+
+| | Path height | Ground clearance | Step length |
+|---|---|---|---|
+| Jansen | 22.46 | 22.23 | 43.41 |
+| ¼ of the way | 23.25 | 23.02 | 42.76 |
+| ½ | 24.10 | 23.86 | 42.18 |
+| ¾ | 25.00 | 24.75 | 41.60 |
+| **all the way** | 25.97 | **25.71** | **41.13** |
+
+Clearance and step length are **anti-correlated** here. Landing the paper's clearance
+costs 5.0% of its step length — and the step length is one of the two numbers we
+currently *do* reproduce. You can have either of the paper's two geometric numbers from
+a linkage indistinguishable from Jansen at published precision. You cannot have both.
+
+### 8.2 Both together exist, but not near Jansen, and not with the paper's ripple
+
+Widening the search to the paper's whole ±30% box, three restarts of a global search
+followed by a least-squares polish:
+
+| | Residual | Max link change | Step | Clearance | |
+|---|---|---|---|---|---|
+| restart 1 | 0.0415 | 24.6% | 44.95 (+3.8%) | 26.12 (+1.7%) | miss |
+| restart 2 | 0.0573 | 25.5% | 45.78 (+5.7%) | 25.74 (+0.1%) | miss |
+| **restart 3** | **0.0010** | **23.8%** | **43.34 (+0.1%)** | **25.70 (+0.0%)** | **hit** |
+
+**So the targets are reachable** — there exists a linkage inside the paper's own bounds
+that produces both numbers, essentially exactly. It sits **23.8%** from Jansen, which is
+notably close to the "≤29%" link changes the paper reports for its *optimized* designs.
+
+A penalty sweep trading fit against closeness (stage 2 in the script) failed to find an
+exact fit any nearer than that. Read that as "we did not find one closer", not as a
+proof that none exists: the penalised objective is rugged and the sweep is stochastic —
+its own results are not monotone in the penalty weight, which is the honest signal that
+it is sampling rather than solving.
+
+**The cross-check is what settles it.** A linkage that matches step length and clearance
+but wrecks a metric that currently agrees is not the design the paper measured either.
+At that 23.8% design:
+
+| Metric | This design | Paper | |
+|---|---|---|---|
+| Step length | 43.34 mm | 43.3 mm | matches |
+| Ground clearance | 25.70 mm | 25.7 mm | matches |
+| **Velocity ripple** | **0.0402** | **0.0956** | **58% off** |
+| Duty factor | 30.4% | ≈20% | +52% |
+
+Our Jansen reproduces the paper's velocity ripple to 3.8% (§1). This linkage misses it by
+58%. Whatever mechanism the paper's Table 4 row describes, it is not this one.
+
+### 8.3 What that means
+
+**The "different link lengths" hypothesis is tested and refuted**, and the gap is closed
+in the only way the evidence allows — by ruling things out rather than by explaining the
+number away:
+
+- It is **not** a stance-definition problem. 25.7 mm exceeds the entire path height, and
+  §1 shows no single band reproduces the row anyway.
+- It is **not** a small-geometry problem. A sub-rounding perturbation lands the clearance
+  exactly, but costs 5% of the step length, so it cannot produce the row's other number.
+- It is **not** a large-geometry problem either. A linkage 23.8% away does produce both,
+  but its velocity ripple is 58% from the paper's — and the ripple is a number we
+  otherwise reproduce.
+
+All three roads fail, and they fail in different directions. The conclusion is the same
+one §1 reaches from the stance side, now supported from the geometry side as well:
+**Table 4's Jansen row is not the output of any single consistent model.** Its five
+numbers cannot be reconciled by choosing a stance rule, and its two geometric numbers
+cannot be reconciled by choosing link lengths.
+
+That is a stronger and more defensible statement than "we cannot reproduce the ground
+clearance", which is where this repo stood before. It is also the appropriate place to
+stop: without the author's code, what remains is unknowable, and inventing a plausible
+story for the number would be worth less than the ruled-out list above.
+
 

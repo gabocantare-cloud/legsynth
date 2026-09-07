@@ -87,10 +87,13 @@ Jansen row — it is internally inconsistent, not merely unpublished. At our ban
 reproduce his step length to 0.4% and his velocity ripple to 4%; his duty factor and
 flatness stand as documented disagreements. Do not tune the band to close them.
 
-**Still open — and it is not a definition problem:** the paper's 25.7 mm ground clearance
-is larger than our entire foot path is tall (22.46 mm), so no stance rule can produce it.
-That points to slightly different link lengths or an unstated normalization. Worth one
-hour, not five.
+**Closed, and it was worth the hour.** The paper's 25.7 mm ground clearance is larger than
+our entire foot path is tall (22.46 mm), so no stance rule can produce it — and the
+different-link-lengths hypothesis was tested rather than assumed. A perturbation smaller than
+the holy numbers' own published precision on eight of ten links lands the clearance at
+25.71 mm, but drops the step length 5%. A linkage 23.8% away hits both geometric numbers
+exactly, but misses the velocity ripple by 58%. Both roads blocked, from opposite directions.
+§8 of `docs/RESULTS.md`.
 
 `legsynth/dynamics.py`, `wear.py`, `constraints.py`, `optimize.py`, `cad.py` — all complete.
 Numbers and arguments in `docs/RESULTS.md`. Four findings worth defending
