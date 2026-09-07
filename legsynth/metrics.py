@@ -52,6 +52,19 @@ import numpy as np
 #: Default stance band, as a fraction of total foot-path height.
 DEFAULT_BAND = 0.01
 
+#: Crank samples behind every published number in this repo.
+#:
+#: Stance is the *longest unbroken arc* of the turn inside the band, so its
+#: measured extent is quantised by the sample spacing: duty factor and step
+#: length both creep as the sample count changes (31.4% at 360 samples, 31.2%
+#: at 1440, and 43.41 mm against 43.49 mm for step length at 3600). None of
+#: that is error - each is the right answer to a slightly different question -
+#: but quoting one quantity at two sample counts in two documents reads as
+#: sloppiness. So every table in `docs/` and `README.md` is generated at this
+#: one count, and every caption says so. The search itself still runs coarser
+#: for speed (`optimize.N_EVAL`); anything published is re-scored here.
+N_PUBLISHED = 1440
+
 #: Wang (2026) Table 4, Jansen baseline row. Our reproduction targets.
 PAPER_TABLE4 = dict(
     step_length=43.3,        # mm

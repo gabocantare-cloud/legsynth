@@ -25,24 +25,34 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from legsynth import optimize as O                      # noqa: E402
 from legsynth.kinematics import DESIGN_KEYS             # noqa: E402
 from legsynth import constraints as C                   # noqa: E402
+from legsynth import metrics as M                       # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEEDS = (0, 1, 2)
 
 
-def campaign(name, min_angle, baseline, pop, gens, seeds, n_refine):
+def campaign(name, min_angle, baseline, pop, gens, seeds, n_refine,
+             baseline_refine, workers=None):
+    """One campaign: several seeded NSGA-II runs, merged and re-scored.
+
+    Two baselines on purpose. `baseline` is measured at the search sample count
+    and is what the search normalises against; `baseline_refine` is measured at
+    `n_refine` and is what the *published* ratios normalise against. Mixing them
+    would divide a design scored at 1440 samples by a Jansen scored at 360, and
+    the sampling difference would show up in the front as if it were physics.
+    """
     print(f"\n=== {name} ===")
     runs = []
     for s in seeds:
         t = time.perf_counter()
         r = O.run(seed=s, min_angle=min_angle, pop=pop, gens=gens,
-                  baseline=baseline)
+                  baseline=baseline, workers=workers)
         runs.append(r)
         print(f"  seed {s}: {len(r['F']):3d} feasible designs "
               f"({time.perf_counter() - t:.0f}s)")
     X, F = O.merge(runs)
     print(f"  merged front: {len(F)} designs")
-    rows = O.refine(X, baseline, n=n_refine, min_angle=min_angle)
+    rows = O.refine(X, baseline_refine, n=n_refine, min_angle=min_angle)
     rows = [r for r in rows if r["feasible"]]
     if rows:
         keep = O.nondominated(np.array([[r["gait_error"], r["wear_ratio"]]
@@ -78,12 +88,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true",
                     help="small population, few generations, one seed")
+    ap.add_argument("--workers", type=int, default=None,
+                    help="processes evaluating a generation at once "
+                         "(default: one per core; 1 stays in-process)")
     args = ap.parse_args()
 
     pop, gens, seeds, n_refine = (40, 20, (0,), 720) if args.quick \
-        else (100, 80, SEEDS, 1440)
+        else (100, 80, SEEDS, M.N_PUBLISHED)
 
     baseline = O.jansen_baseline()
+    baseline_refine = O.jansen_baseline(n=n_refine)
     print(f"Jansen baseline: step {baseline['step_length']:.2f} mm, "
           f"clearance {baseline['ground_clearance']:.2f} mm, "
           f"duty {100 * baseline['duty_factor']:.1f}%")
@@ -93,10 +107,12 @@ def main():
     print(f"NSGA-II: population {pop}, {gens} generations, seeds {list(seeds)}")
 
     t0 = time.perf_counter()
-    paper = campaign("paper constraints", None, baseline, pop, gens, seeds, n_refine)
+    paper = campaign("paper constraints", None, baseline, pop, gens, seeds,
+                     n_refine, baseline_refine, workers=args.workers)
     ours = campaign(f"plus loaded transmission angle >= "
                     f"{C.GOOD_TRANSMISSION_ANGLE:.0f} deg",
-                    C.GOOD_TRANSMISSION_ANGLE, baseline, pop, gens, seeds, n_refine)
+                    C.GOOD_TRANSMISSION_ANGLE, baseline, pop, gens, seeds,
+                    n_refine, baseline_refine, workers=args.workers)
 
     summarise("Paper's problem", paper)
     summarise("With our constraint", ours)
@@ -121,8 +137,12 @@ def main():
                       n_refine=n_refine, bound_fraction=O.BOUND_FRACTION,
                       floor=O.FLOOR, min_angle=C.GOOD_TRANSMISSION_ANGLE),
         design_keys=list(DESIGN_KEYS),
+        # The published baseline is the one at n_refine: it is the denominator
+        # of every ratio in `paper_front` and `constrained_front`.
         baseline={k: (float(v) if not isinstance(v, bool) else v)
-                  for k, v in baseline.items()},
+                  for k, v in baseline_refine.items()},
+        baseline_search={k: (float(v) if not isinstance(v, bool) else v)
+                         for k, v in baseline.items()},
         paper_front=paper, constrained_front=ours,
         runtime_s=time.perf_counter() - t0,
     )

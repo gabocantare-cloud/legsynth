@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from legsynth.kinematics import JansenLeg
-from legsynth import constraints as C, dynamics as D, metrics as M
+from legsynth import constraints as C, dynamics as D
 
 JANSEN_BRANCH = (-1, -1, 1, -1, 1)
 
@@ -122,7 +122,8 @@ def test_branch_margin_is_zero_for_a_design_that_cannot_close():
 def test_branch_margin_is_scale_invariant(leg):
     """Same linkage, bigger: the margin is normalised, so it must not change."""
     big = JansenLeg({k: 2.0 * v for k, v in leg.L.items()}, branches=JANSEN_BRANCH)
-    assert C.branch_margin(big, 360) == pytest.approx(C.branch_margin(leg, 360), rel=1e-9)
+    assert C.branch_margin(big, 360) == pytest.approx(
+        C.branch_margin(leg, 360), rel=1e-9)
 
 
 # --------------------------------------------------------------------------

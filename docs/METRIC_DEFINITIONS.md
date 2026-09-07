@@ -72,15 +72,21 @@ precondition.
 
 ## 3. Our numbers vs the paper
 
-Jansen holy numbers, branch `(-1,-1,1,-1,1)`, 3600 crank samples, band 1% (= 0.2246 mm).
-Foot path: 67.91 mm wide × 22.46 mm tall.
+Jansen holy numbers, branch `(-1,-1,1,-1,1)`, **1440 crank samples**, band 1%
+(= 0.2246 mm). Foot path: 67.91 mm wide × 22.46 mm tall.
+
+1440 is `metrics.N_PUBLISHED`, the one sample count behind every table in this repo.
+It matters here more than it looks: stance is the longest unbroken *arc* inside the
+band, so its measured extent is quantised by the sample spacing, and step length
+reads 43.41 mm at 1440 against 43.49 mm at 3600. Neither is wrong. Quoting one here
+and the other in the README, which is what this document used to do, is.
 
 | Metric | Ours | Paper (Table 4) | Difference |
 |---|---|---|---|
-| Step length | **43.49 mm** | 43.3 mm | +0.4% |
+| Step length | **43.41 mm** | 43.3 mm | +0.3% |
 | Ground clearance | **22.23 mm** | 25.7 mm | −13.5% |
 | Stance flatness | **0.0011** | 0.0281 | −96% |
-| Velocity ripple | **0.0918** | 0.0956 | −4.0% |
+| Velocity ripple | **0.0920** | 0.0956 | −3.8% |
 | Duty factor | **31.2%** | ≈20% | +56% |
 
 Two of the five reproduce well. Three do not, and they do not fail in the same way.
@@ -89,15 +95,15 @@ Two of the five reproduce well. Three do not, and they do not fail in the same w
 
 | band | = mm | step | clearance | flatness | ripple | duty |
 |---|---|---|---|---|---|---|
-| 0.2% | 0.045 | 10.19 | 22.41 | 0.0014 | 0.0338 | 8.0% |
-| 0.5% | 0.112 | 38.88 | 22.34 | 0.0007 | 0.0830 | 27.7% |
-| **1.0%** | **0.225** | **43.49** | **22.23** | **0.0011** | **0.0918** | **31.2%** |
-| 2.0% | 0.449 | 49.24 | 22.01 | 0.0021 | 0.1048 | 35.8% |
-| 3.0% | 0.674 | 53.21 | 21.78 | 0.0031 | 0.1165 | 39.2% |
-| 5.0% | 1.123 | 58.71 | 21.33 | 0.0050 | 0.1404 | 44.4% |
-| 8.0% | 1.797 | 63.87 | 20.66 | 0.0077 | 0.1835 | 50.5% |
-| 12.0% | 2.695 | 67.30 | 19.76 | 0.0113 | 0.2627 | 57.2% |
-| 20.0% | 4.491 | 67.91 | 17.97 | 0.0191 | 0.3607 | 67.8% |
+| 0.2% | 0.045 | 10.07 | 22.41 | 0.0014 | 0.0335 | 7.9% |
+| 0.5% | 0.112 | 38.84 | 22.34 | 0.0007 | 0.0831 | 27.7% |
+| **1.0%** | **0.225** | **43.41** | **22.23** | **0.0011** | **0.0920** | **31.2%** |
+| 2.0% | 0.449 | 49.17 | 22.01 | 0.0021 | 0.1049 | 35.8% |
+| 3.0% | 0.674 | 53.15 | 21.78 | 0.0031 | 0.1167 | 39.2% |
+| 5.0% | 1.123 | 58.73 | 21.33 | 0.0050 | 0.1407 | 44.4% |
+| 8.0% | 1.797 | 63.80 | 20.66 | 0.0076 | 0.1830 | 50.4% |
+| 12.0% | 2.695 | 67.31 | 19.76 | 0.0113 | 0.2635 | 57.2% |
+| 20.0% | 4.491 | 67.91 | 17.97 | 0.0190 | 0.3607 | 67.7% |
 
 Step length nearly doubles across this range and duty factor triples. The 0.2% row is the
 fragmentation case described above — it is measuring one dimple, not a stroke.
@@ -159,8 +165,8 @@ above 0.85× the Jansen baseline. Those constraints are now referenced to **our*
 baseline, computed with the definitions on this page, not to the paper's Table 4. Mixing the
 two would compare designs measured with one ruler against a threshold set with another.
 
-Concretely, the baseline the optimizer defends is: step length 43.49 mm, ground clearance
-22.23 mm, duty factor 31.2%, at band = 1%.
+Concretely, the baseline the optimizer defends is: step length 43.41 mm, ground clearance
+22.23 mm, duty factor 31.2%, at band = 1% and 1440 crank samples.
 
 The one thing that carries over unchanged is the paper's *relative* claim — that Jansen is
 Pareto-dominated on gait quality versus wear. Ratios between designs measured with a single

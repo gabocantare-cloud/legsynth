@@ -76,8 +76,8 @@ mechanically sane to build:
 - `tolerance_sweep` publishes the sensitivity; `band_matching` inverts it.
 
 Measured baseline from this code at band = 1% (0.2246 mm): full path 67.9 mm wide ×
-22.5 mm tall, step length 43.49 mm, ground clearance 22.23 mm, stance flatness 0.0011,
-velocity ripple 0.0918, duty factor 31.2%.
+22.5 mm tall, step length 43.41 mm, ground clearance 22.23 mm, stance flatness 0.0011,
+velocity ripple 0.0920, duty factor 31.2%, at 1440 crank samples.
 
 **The step-length discrepancy is resolved and documented.** Instead of asking what our
 number is, we asked what stance band would be needed to reproduce each of the paper's
@@ -93,8 +93,8 @@ That points to slightly different link lengths or an unstated normalization. Wor
 hour, not five.
 
 `legsynth/dynamics.py`, `wear.py`, `constraints.py`, `optimize.py`, `cad.py` — all complete,
-76 passing tests. Numbers and arguments in `docs/RESULTS.md`. Three findings worth defending
-in an interview:
+Numbers and arguments in `docs/RESULTS.md`. Four findings worth defending
+in an interview, plus one honest negative:
 
 1. **The eleven bars are 7 rigid bodies and 10 revolute joints.** Two of the bar triples close
    triangles. That derives the paper's joint count instead of taking it on faith, and Grübler

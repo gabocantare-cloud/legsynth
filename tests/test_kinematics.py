@@ -1,6 +1,5 @@
 import numpy as np
-import pytest
-from legsynth.kinematics import JansenLeg, HOLY, circ
+from legsynth.kinematics import JansenLeg, circ
 
 JANSEN_BRANCH = (-1, -1, 1, -1, 1)
 

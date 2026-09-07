@@ -7,7 +7,7 @@
     -1,
     1
   ],
-  "n_samples": 3600,
+  "n_samples": 1440,
   "lengths": {
     "a": 38.0,
     "b": 41.5,
@@ -23,15 +23,15 @@
     "l": 7.8,
     "m": 15.0
   },
-  "path_height_mm": 22.457161229910994,
-  "path_width_mm": 67.9084018009337,
+  "path_height_mm": 22.456945823194303,
+  "path_width_mm": 67.9083440747811,
   "default_band": 0.01,
   "ours": {
-    "step_length": 43.49018724745394,
-    "ground_clearance": 22.23258961761188,
-    "stance_flatness": 0.001120015836572533,
-    "velocity_ripple": 0.09182257954535783,
-    "duty_factor": 0.31194444444444447
+    "step_length": 43.40862912610561,
+    "ground_clearance": 22.232376364962363,
+    "stance_flatness": 0.0011194563710338434,
+    "velocity_ripple": 0.09200272045626098,
+    "duty_factor": 0.31180555555555556
   },
   "paper": {
     "step_length": 43.3,
@@ -43,91 +43,91 @@
   "sweep": [
     {
       "band": 0.002,
-      "tol_mm": 0.04491432245982199,
-      "step_length": 10.193415555661609,
-      "ground_clearance": 22.412246907451177,
-      "stance_flatness": 0.0013520030230624578,
-      "velocity_ripple": 0.033767210412707346,
-      "duty_factor": 0.07972222222222222
+      "tol_mm": 0.04491389164638861,
+      "step_length": 10.070249258201628,
+      "ground_clearance": 22.412031931547915,
+      "stance_flatness": 0.0013524244459110623,
+      "velocity_ripple": 0.03350029561498348,
+      "duty_factor": 0.07916666666666666
     },
     {
       "band": 0.005,
-      "tol_mm": 0.11228580614955497,
-      "step_length": 38.876923323833026,
-      "ground_clearance": 22.344875423761437,
-      "stance_flatness": 0.0007317684526756897,
-      "velocity_ripple": 0.08298964317887642,
-      "duty_factor": 0.27694444444444444
+      "tol_mm": 0.11228472911597152,
+      "step_length": 38.83503595240889,
+      "ground_clearance": 22.344661094078333,
+      "stance_flatness": 0.0007335655689037928,
+      "velocity_ripple": 0.08311361390181682,
+      "duty_factor": 0.27708333333333335
     },
     {
       "band": 0.01,
-      "tol_mm": 0.22457161229910994,
-      "step_length": 43.49018724745394,
-      "ground_clearance": 22.23258961761188,
-      "stance_flatness": 0.001120015836572533,
-      "velocity_ripple": 0.09182257954535783,
-      "duty_factor": 0.31194444444444447
+      "tol_mm": 0.22456945823194305,
+      "step_length": 43.40862912610561,
+      "ground_clearance": 22.232376364962363,
+      "stance_flatness": 0.0011194563710338434,
+      "velocity_ripple": 0.09200272045626098,
+      "duty_factor": 0.31180555555555556
     },
     {
       "band": 0.02,
-      "tol_mm": 0.44914322459821987,
-      "step_length": 49.23827332290684,
-      "ground_clearance": 22.008018005312778,
-      "stance_flatness": 0.00213139241326629,
-      "velocity_ripple": 0.10479245498135348,
-      "duty_factor": 0.35777777777777775
+      "tol_mm": 0.4491389164638861,
+      "step_length": 49.16644857494631,
+      "ground_clearance": 22.007806906730423,
+      "stance_flatness": 0.0021300605902317264,
+      "velocity_ripple": 0.10488083813579809,
+      "duty_factor": 0.3576388888888889
     },
     {
       "band": 0.03,
-      "tol_mm": 0.6737148368973298,
-      "step_length": 53.20737684553073,
-      "ground_clearance": 21.783446393013662,
-      "stance_flatness": 0.0031233151711443715,
-      "velocity_ripple": 0.11650092005863863,
+      "tol_mm": 0.6737083746958291,
+      "step_length": 53.153149658337256,
+      "ground_clearance": 21.78323744849847,
+      "stance_flatness": 0.003126575574371123,
+      "velocity_ripple": 0.11672699766455379,
       "duty_factor": 0.39166666666666666
     },
     {
       "band": 0.05,
-      "tol_mm": 1.1228580614955497,
-      "step_length": 58.71467590896057,
-      "ground_clearance": 21.334303168415445,
-      "stance_flatness": 0.0049896294102399425,
-      "velocity_ripple": 0.1404007246525264,
-      "duty_factor": 0.4438888888888889
+      "tol_mm": 1.1228472911597152,
+      "step_length": 58.73019983919902,
+      "ground_clearance": 21.334098532034588,
+      "stance_flatness": 0.005014794289836395,
+      "velocity_ripple": 0.140666146977416,
+      "duty_factor": 0.4444444444444444
     },
     {
       "band": 0.08,
-      "tol_mm": 1.7965728983928795,
-      "step_length": 63.867649612735065,
-      "ground_clearance": 20.660588331518113,
-      "stance_flatness": 0.007663158081474309,
-      "velocity_ripple": 0.1834594635224708,
-      "duty_factor": 0.5047222222222222
+      "tol_mm": 1.7965556658555444,
+      "step_length": 63.79882546261635,
+      "ground_clearance": 20.660390157338753,
+      "stance_flatness": 0.00763964635388802,
+      "velocity_ripple": 0.18297953751308998,
+      "duty_factor": 0.5041666666666667
     },
     {
       "band": 0.12,
-      "tol_mm": 2.694859347589319,
-      "step_length": 67.30419440129235,
-      "ground_clearance": 19.76230188232168,
-      "stance_flatness": 0.011307883615074437,
-      "velocity_ripple": 0.2626597891007585,
-      "duty_factor": 0.5716666666666667
+      "tol_mm": 2.6948334987833165,
+      "step_length": 67.30822655181711,
+      "ground_clearance": 19.762112324410992,
+      "stance_flatness": 0.011343865143887374,
+      "velocity_ripple": 0.26349521233589285,
+      "duty_factor": 0.5722222222222222
     },
     {
       "band": 0.2,
-      "tol_mm": 4.491432245982199,
-      "step_length": 67.9084018009337,
-      "ground_clearance": 17.9657289839288,
-      "stance_flatness": 0.019079051655582102,
-      "velocity_ripple": 0.3607091571642313,
-      "duty_factor": 0.6775
+      "tol_mm": 4.491389164638861,
+      "step_length": 67.9083440747811,
+      "ground_clearance": 17.965556658555442,
+      "stance_flatness": 0.01904347971876443,
+      "velocity_ripple": 0.3606875907839423,
+      "duty_factor": 0.6770833333333334
     }
   ],
   "band_required_for_paper_value": {
-    "step_length": 0.009773781718338148,
+    "step_length": 0.009773806792407524,
     "ground_clearance": NaN,
-    "stance_flatness": 0.31169465827059484,
-    "velocity_ripple": 0.012711081609728902,
-    "duty_factor": 0.003464342788966444
+    "stance_flatness": 0.31169757936557596,
+    "velocity_ripple": 0.012711134858338597,
+    "duty_factor": 0.0034642231329083855
   }
 }

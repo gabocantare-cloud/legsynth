@@ -73,15 +73,18 @@ def main():
     peak = np.nanmax(sol["forces"], axis=1)
     print(f"  overall      whole cycle   {ta['min']:6.2f} deg   "
           f"loaded (stance) {ta['min_stance']:6.2f} deg")
-    print(f"  the {ta['min']:.1f} deg minimum falls at crank {np.degrees(theta[j]):.0f} deg, "
+    print(f"  the {ta['min']:.1f} deg minimum falls at crank "
+          f"{np.degrees(theta[j]):.0f} deg, "
           f"in {'stance' if sol['stance'][j] else 'swing'}, "
           f"with {peak[j]:.1f} N in the pin")
     k = int(np.argmax(peak))
     print(f"  the {peak[k]:.1f} N peak force falls at crank "
           f"{np.degrees(theta[k]):.0f} deg, at {per_sample[k]:.1f} deg")
-    print(f"  verdict: {'FAILS' if ta['min'] < C.GOOD_TRANSMISSION_ANGLE else 'passes'} "
+    whole = "FAILS" if ta["min"] < C.GOOD_TRANSMISSION_ANGLE else "passes"
+    loaded = "FAILS" if ta["min_stance"] < C.GOOD_TRANSMISSION_ANGLE else "passes"
+    print(f"  verdict: {whole} "
           f"the {C.GOOD_TRANSMISSION_ANGLE:.0f} deg rule over the whole cycle, "
-          f"{'FAILS' if ta['min_stance'] < C.GOOD_TRANSMISSION_ANGLE else 'passes'} it loaded")
+          f"{loaded} it loaded")
 
     out = dict(
         n_samples=N, branch=list(JANSEN_BRANCH),

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from legsynth.kinematics import JansenLeg, HOLY, DESIGN_KEYS
-from legsynth import optimize as O, constraints as C
+from legsynth.kinematics import HOLY, DESIGN_KEYS
+from legsynth import optimize as O
 
 JANSEN = np.array([HOLY[k] for k in DESIGN_KEYS], float)
 
@@ -142,3 +142,111 @@ def test_a_short_search_returns_feasible_improving_designs(baseline):
     assert len(r["F"]) > 0, "search should find at least one feasible design"
     assert np.all(r["G"] <= 1e-9), "returned designs must satisfy the constraints"
     assert np.any(r["F"] < 1.0), "expected improvement on at least one objective"
+
+
+# --------------------------------------------------------------------------
+# hypervolume — how two fronts get compared
+# --------------------------------------------------------------------------
+
+def test_hypervolume_on_a_hand_worked_case():
+    """Two points, worked out by hand as a union of rectangles.
+
+    With Jansen at (1, 1), each design covers the rectangle between itself and
+    (1, 1). The design at (0.5, 0.5) covers 0.5 x 0.5 = 0.25. The design at
+    (0.2, 0.8) covers 0.8 x 0.2 = 0.16. They overlap on x in [0.5, 1] and y in
+    [0.8, 1], which is 0.5 x 0.2 = 0.10, and hypervolume is the *union*:
+
+        0.25 + 0.16 - 0.10 = 0.31
+
+    Subtracting the overlap is the whole content of the sweep - two designs
+    that improve on the same region of the trade-off are not worth twice one.
+    """
+    assert O.hypervolume([[0.5, 0.5]]) == pytest.approx(0.25)
+    assert O.hypervolume([[0.5, 0.5], [0.2, 0.8]]) == pytest.approx(0.31)
+
+
+def test_hypervolume_ignores_designs_that_do_not_beat_jansen():
+    """A design worse than Jansen on either axis has won no ground."""
+    assert O.hypervolume([[1.5, 0.5]]) == 0.0
+    assert O.hypervolume([[0.5, 1.5]]) == 0.0
+    assert O.hypervolume(np.zeros((0, 2))) == 0.0
+    assert O.hypervolume([[0.5, 0.5], [1.5, 0.1]]) == pytest.approx(0.25)
+
+
+def test_hypervolume_rewards_a_wider_front():
+    """Two fronts with the same best-on-each-axis, one spread and one not.
+
+    This is the property that makes hypervolume the right summary: "best gait
+    error" cannot tell these apart, and they are not the same front.
+    """
+    narrow = [[0.4, 0.9], [0.9, 0.4]]
+    wide = [[0.4, 0.9], [0.6, 0.6], [0.9, 0.4]]
+    assert O.hypervolume(wide) > O.hypervolume(narrow)
+
+
+# --------------------------------------------------------------------------
+# an empty campaign is an answer, not a crash
+# --------------------------------------------------------------------------
+
+def test_merge_survives_every_run_coming_back_empty():
+    """Tighten the transmission-angle constraint far enough and nothing is
+    feasible. That is the measurement, so it must not raise."""
+    empty = dict(X=np.zeros((0, len(DESIGN_KEYS))), F=np.zeros((0, 2)))
+    X, F = O.merge([empty, empty])
+    assert X.shape == (0, len(DESIGN_KEYS)) and F.shape == (0, 2)
+    assert O.refine(X, O.jansen_baseline(n=180)) == []
+    assert O.hypervolume(F) == 0.0
+
+
+# --------------------------------------------------------------------------
+# the two knobs the robustness studies turn
+# --------------------------------------------------------------------------
+
+def test_the_stance_band_reaches_the_objective(baseline):
+    """`band` has to travel all the way from `evaluate` down into the metrics.
+
+    A wider band counts more of the crank turn as stance, so duty factor rises.
+    If this ever stops being true the band argument has been dropped somewhere
+    in the chain and the band study is silently measuring nothing.
+    """
+    x = JANSEN.copy()
+    narrow = O.describe(O.leg_from_vector(x), n=360, band=0.005)
+    wide = O.describe(O.leg_from_vector(x), n=360, band=0.02)
+    assert wide["duty_factor"] > narrow["duty_factor"]
+    assert wide["step_length"] > narrow["step_length"]
+
+
+def test_jansen_is_still_the_anchor_under_the_integrated_wear_objective():
+    """Swapping which wear number the objective minimises must not move Jansen.
+
+    Both objectives are ratios to Jansen, so Jansen sits at (1, 1) whichever
+    wear form is used. The 51% gap between the two forms lives in the absolute
+    numbers, not in the normalised ones - which is exactly the thing the
+    objective study is testing on the rest of the front.
+    """
+    base = O.jansen_baseline(n=360)
+    for key in O.WEAR_KEYS:
+        f, _, _ = O.evaluate(JANSEN, base, n=360, wear_key=key)
+        assert f[1] == pytest.approx(1.0, rel=1e-9), key
+    assert base["wear"] > 1.4 * base["wear_integrated"], \
+        "the mean-force form should still be the larger of the two"
+
+
+# --------------------------------------------------------------------------
+# running a generation across processes must not change the answer
+# --------------------------------------------------------------------------
+
+@pytest.mark.slow
+def test_parallel_evaluation_matches_serial_exactly(baseline):
+    """The speed-up must be a wall-clock change only.
+
+    Each design is evaluated independently and `pool.map` preserves order, so
+    spreading a generation over processes cannot change a single number. If
+    this ever fails, the parallel path has picked up state that the serial path
+    does not have, and every result computed with `--workers` is suspect.
+    """
+    kw = dict(seed=0, pop=16, gens=4, baseline=baseline)
+    serial = O.run(workers=1, **kw)
+    parallel = O.run(workers=2, **kw)
+    assert np.array_equal(serial["F"], parallel["F"])
+    assert np.array_equal(serial["X"], parallel["X"])

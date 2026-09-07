@@ -5,7 +5,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from legsynth.kinematics import JansenLeg
 
@@ -20,8 +21,10 @@ thetas = np.linspace(0, 2*np.pi, N, endpoint=False)
 poses = [{k: v[0] for k, v in leg.solve(t).items()} for t in thetas]
 
 fig, ax = plt.subplots(figsize=(6, 7))
-ax.set_aspect("equal"); ax.grid(alpha=0.3)
-ax.set_xlim(-115, 30); ax.set_ylim(-100, 45)
+ax.set_aspect("equal")
+ax.grid(alpha=0.3)
+ax.set_xlim(-115, 30)
+ax.set_ylim(-100, 45)
 ax.set_title("Jansen leg — one crank revolution")
 ax.plot(path[:,0], path[:,1], color="tab:blue", lw=2, alpha=0.5, label="foot path")
 ax.plot(0, 0, "ro", ms=7, label="crank centre")

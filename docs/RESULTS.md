@@ -3,9 +3,17 @@
 Everything on this page came out of code in this repo. Regenerate with:
 
 ```
+python scripts/reproduce.py          # all four stages below, in order
+```
+
+or one stage at a time:
+
+```
 python scripts/gait_report.py        # gait metrics + stance-band sensitivity
-python scripts/run_optimization.py   # both Pareto fronts (~15 min)
+python scripts/mechanics_report.py   # pin forces, wear, transmission angles
+python scripts/run_optimization.py   # both Pareto fronts (~10 min, all cores)
 python scripts/make_figures.py       # every figure below
+python scripts/robustness.py         # the studies behind §7 (~50 min)
 ```
 
 Where a number disagrees with Wang (2026), it is reported as a disagreement.
@@ -207,32 +215,50 @@ The size of the win does not.
 
 | Claim | Paper | Ours |
 |---|---|---|
-| Stance flatness | 28% better | 20% better |
-| Velocity ripple | 58% better | 52% better |
-| Wear | 56% less | **25% less** |
-| Link-length changes | ≤29% | ≤4.6% |
+| Stance flatness | 28% better | 17% better |
+| Velocity ripple | 58% better | 51% better |
+| Wear | 56% less | **24% less** |
+| Link-length changes | ≤29% | ≤8.5% |
+
+The gait numbers are measured on the best-gait design, which is the comparison
+the paper's own "representative redesign" invites.
 
 The two gait numbers land close. The wear claim does not: the lowest wear ratio
-anywhere on our front is 0.754, and the design that achieves it gives up gait to
+anywhere on our front is 0.758, and the design that achieves it gives up gait to
 get there. Nothing we found comes near a 56% reduction, and the designs that do
 best on wear are not the ones that do best on gait — which is the whole point of
 drawing a front rather than quoting one design.
 
-Our optima also sit far closer to Jansen than the paper's do: 4.6% maximum link
-change against their 29%. That is consistent with §5 — the feasible set is a thin
-shell around Jansen, so a search that respects the constraints cannot wander far.
-A search that reported 29% changes was either exploring a region our constraints
-exclude, or measuring step length in a way that tolerates a much less flat foot
-path.
+Our optima also sit far closer to Jansen than the paper's do: no design anywhere
+on our front moves a link by more than 8.5%, against their 29%. That is
+consistent with §5 — the feasible set is a thin shell around Jansen, so a search
+that respects the constraints cannot wander far. A search that reported 29%
+changes was either exploring a region our constraints exclude, or measuring step
+length in a way that tolerates a much less flat foot path.
 
-Representative designs, all re-scored at 1440 samples:
+Representative designs from the paper's (unconstrained) front, all re-scored at
+1440 samples — the same count as every other table in this repo:
 
-| Design | Gait error | Wear ratio | Step | Duty | Min loaded angle |
-|---|---|---|---|---|---|
-| Jansen | 1.000 | 1.000 | 43.41 mm | 31.4% | 42.7° |
-| Best gait | 0.642 | 0.986 | — | — | 41.9°–52.0° range on front |
-| Balanced | 0.720 | 0.801 | 38.98 mm | 27.6% | 52.0° |
-| Best wear | 0.787 | 0.754 | — | — | — |
+| Design | Gait error | Wear ratio | Step | Clearance | Duty | Min loaded angle |
+|---|---|---|---|---|---|---|
+| Jansen | 1.000 | 1.000 | 43.41 mm | 22.23 mm | 31.2% | 42.7° |
+| Best gait | 0.658 | 0.992 | 44.43 mm | 18.91 mm | 33.3% | 41.9° |
+| Balanced | 0.742 | 0.806 | 38.98 mm | 19.00 mm | 27.6% | 52.0° |
+| Best wear | 0.811 | 0.758 | 37.68 mm | 19.15 mm | 26.7% | 46.7° |
+
+"Balanced" is the design with the smallest sum of the two objectives. It is a
+defensible pick and not the only one, which is why the whole front is saved to
+`results/pareto.json` rather than just this row.
+
+Read the table as the trade-off it is. The best-gait design buys its flat stance
+by giving up essentially nothing on wear (0.992) — and it is the only one of the
+three that keeps a *longer* step than Jansen. The other two buy their wear
+reduction by shortening the stride to about 38 mm, right against the 0.85× floor
+the paper's own constraints impose. Every design on the front loses ground
+clearance, from 22.2 mm to roughly 19 mm: nothing in either objective rewards
+lifting the foot higher, and only the 0.85× constraint stops it falling further.
+That is a fair criticism of the paper's objective set, and it is ours too, since
+we reproduced it deliberately.
 
 ### Our own constraint turns out to be nearly free — and that is a real result
 
@@ -242,9 +268,15 @@ The honest answer to "what does the manufacturability constraint cost?" is:
 Across the 20 designs on the paper's unconstrained front, the minimum loaded
 transmission angle runs from 41.9° to 52.0°, median 48.3°. **Not one of them
 violates the 40° rule.** The two fronts in the figure lie essentially on top of
-each other. The small differences between them (best gait error 0.642 against
-0.658) are run-to-run variation in a stochastic search, not a price paid for the
-constraint — attributing them to the constraint would be reading noise as signal.
+each other. The small differences between them (best gait error 0.658 against
+0.676, best wear ratio 0.758 against 0.759) are run-to-run variation in a
+stochastic search, not a price paid for the constraint — attributing them to the
+constraint would be reading noise as signal.
+
+That last sentence is the load-bearing one, so it is measured rather than
+asserted. §7 runs the unconstrained campaign three times with different random
+seeds and compares how far the front moves on its own against how far the
+constraint moves it.
 
 This is a negative result for the extension, and it is reported as one. But it is
 not a wasted one, for two reasons.

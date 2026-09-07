@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+title: >-
+  legsynth: an open reproduction and extension of durability-aware
+  Jansen linkage optimization
+message: >-
+  If you use this software, please cite it, and cite the paper it
+  reproduces (listed under references below).
+type: software
+authors:
+  - given-names: Gabriel
+    family-names: Cantare
+    email: gabocantare@gmail.com
+    affiliation: Texas A&M University
+repository-code: "https://github.com/gabocantare/legsynth"
+license: MIT
+version: 0.1.0
+date-released: "2026-09-07"
+keywords:
+  - Jansen linkage
+  - strandbeest
+  - mechanism synthesis
+  - multi-objective optimization
+  - NSGA-II
+  - Archard wear
+  - transmission angle
+  - kinematics
+abstract: >-
+  An open-source reproduction and extension of Wang (2026), which
+  re-optimizes Theo Jansen's eleven-bar walking linkage to trade gait
+  quality against joint wear and for which no code was released. The
+  package implements the full pipeline - dyad-cascade kinematics,
+  quasi-static inverse dynamics verified by virtual work, Archard wear
+  per revolute joint, and NSGA-II over the ten link lengths - and adds
+  the manufacturability check the paper omits: minimum transmission
+  angle enforced while the foot is loaded. It publishes explicit
+  formulas for the five gait metrics the paper reports but never
+  defines, and documents three measured disagreements with the paper's
+  numbers rather than tuning them away.
+references:
+  - type: article
+    title: >-
+      Durability-Aware Multi-Objective Optimization of the Jansen
+      Linkage: Trading Gait Quality Against Joint Wear
+    authors:
+      - given-names: Jichao
+        family-names: Wang
+    year: 2026
+    identifiers:
+      - type: other
+        value: "arXiv:2606.22129"

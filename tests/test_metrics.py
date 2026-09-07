@@ -9,7 +9,14 @@ JANSEN_BRANCH = (-1, -1, 1, -1, 1)
 
 @pytest.fixture(scope="module")
 def path():
-    return JansenLeg(branches=JANSEN_BRANCH).foot_path(3600)
+    """The Jansen foot path at the one sample count every published table uses.
+
+    Not an arbitrary number. Stance is the longest unbroken arc inside the band,
+    so its measured extent is quantised by the sample spacing and step length
+    reads 43.41 mm here against 43.49 mm at 3600. Testing at the published count
+    is what keeps the tests and the documents talking about the same thing.
+    """
+    return JansenLeg(branches=JANSEN_BRANCH).foot_path(M.N_PUBLISHED)
 
 
 # --------------------------------------------------------------------------
@@ -79,7 +86,8 @@ def test_metrics_are_scale_invariant_where_they_should_be(path):
     big = M.gait_metrics(2.0 * path)
     small = M.gait_metrics(path)
     assert big["step_length"] == pytest.approx(2 * small["step_length"], rel=1e-12)
-    assert big["ground_clearance"] == pytest.approx(2 * small["ground_clearance"], rel=1e-12)
+    assert big["ground_clearance"] == pytest.approx(
+        2 * small["ground_clearance"], rel=1e-12)
     assert big["duty_factor"] == pytest.approx(small["duty_factor"], rel=1e-12)
     assert big["stance_flatness"] == pytest.approx(small["stance_flatness"], rel=1e-12)
     assert big["velocity_ripple"] == pytest.approx(small["velocity_ripple"], rel=1e-12)
@@ -158,7 +166,8 @@ def test_step_length_and_ripple_agree_with_the_paper_at_our_band(path):
     """The two metrics we do reproduce, held to the tolerance we claim."""
     g = M.gait_metrics(path)
     assert g["step_length"] == pytest.approx(M.PAPER_TABLE4["step_length"], rel=0.01)
-    assert g["velocity_ripple"] == pytest.approx(M.PAPER_TABLE4["velocity_ripple"], rel=0.05)
+    assert g["velocity_ripple"] == pytest.approx(
+        M.PAPER_TABLE4["velocity_ripple"], rel=0.05)
 
 
 def test_duty_factor_disagrees_with_the_paper(path):

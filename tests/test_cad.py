@@ -95,7 +95,8 @@ def test_assembly_contains_every_bar_at_its_true_length(tmp_path, leg):
     for key, u, v in cad.BARS:
         want = float(np.linalg.norm(pts[u] - pts[v]))
         assert want == pytest.approx(leg.L[key], abs=1e-6)
-        assert any(np.isclose(np.linalg.norm(np.array(a) - np.array(b)), want, atol=1e-4)
+        assert any(np.isclose(np.linalg.norm(np.array(a) - np.array(b)), want,
+                              atol=1e-4)
                    for a, b in lines), f"bar {key} missing from the drawing"
 
 

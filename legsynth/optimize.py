@@ -79,7 +79,7 @@ def bounds(fraction=BOUND_FRACTION):
     return base * (1.0 - fraction), base * (1.0 + fraction)
 
 
-def describe(leg, n=N_EVAL):
+def describe(leg, n=N_EVAL, band=M.DEFAULT_BAND):
     """Every published number for one design, in one dict.
 
     Absolute values, not ratios — `evaluate` turns these into ratios against
@@ -87,7 +87,7 @@ def describe(leg, n=N_EVAL):
     assemble.
     """
     path = leg.foot_path(n)
-    out = dict(M.gait_metrics(path))
+    out = dict(M.gait_metrics(path, band=band))
     if not np.all(np.isfinite(path)):
         out.update(wear=float("nan"), wear_integrated=float("nan"),
                    min_transmission_angle=float("nan"),
@@ -97,7 +97,7 @@ def describe(leg, n=N_EVAL):
         return out
     sol = D.solve_statics(leg, n=n)
     w = W.wear_per_cycle(sol)
-    ta = C.transmission_angles(leg, n=n)
+    ta = C.transmission_angles(leg, n=n, band=band)
     forces = sol["forces"]
     out.update(
         wear=w["total"], wear_integrated=w["total_integrated"],
@@ -111,13 +111,23 @@ def describe(leg, n=N_EVAL):
     return out
 
 
-def jansen_baseline(n=N_EVAL):
+def jansen_baseline(n=N_EVAL, band=M.DEFAULT_BAND):
     """The reference design every objective and constraint is measured against."""
-    return describe(JansenLeg(branches=JANSEN_BRANCH), n=n)
+    return describe(JansenLeg(branches=JANSEN_BRANCH), n=n, band=band)
+
+
+#: Which wear number the second objective minimises. "wear" is Archard applied
+#: to the cycle-mean pin force, which is the paper's own shortcut and therefore
+#: the right default for a reproduction. "wear_integrated" integrates force
+#: against sliding instead, which `wear.py` shows is 51% smaller on Jansen.
+#: Swapping it asks whether the paper's shortcut changes the *answer* as well as
+#: the magnitude - see `scripts/robustness.py`.
+WEAR_KEYS = ("wear", "wear_integrated")
 
 
 def evaluate(x, baseline, n=N_EVAL, min_angle=None,
-             min_margin=C.MIN_BRANCH_MARGIN):
+             min_margin=C.MIN_BRANCH_MARGIN, band=M.DEFAULT_BAND,
+             wear_key="wear"):
     """Objectives and constraints for one design vector.
 
     Returns (objectives, constraints, raw) where objectives are
@@ -128,7 +138,7 @@ def evaluate(x, baseline, n=N_EVAL, min_angle=None,
     loaded-transmission-angle constraint on top.
     """
     leg = leg_from_vector(x)
-    raw = describe(leg, n=n)
+    raw = describe(leg, n=n, band=band)
     n_con = 4 if min_angle is None else 5
 
     def dead():
@@ -136,14 +146,14 @@ def evaluate(x, baseline, n=N_EVAL, min_angle=None,
 
     if not raw["assembles"]:
         return dead()
-    needed = ("stance_flatness", "velocity_ripple", "wear", "step_length",
+    needed = ("stance_flatness", "velocity_ripple", wear_key, "step_length",
               "ground_clearance", "duty_factor")
     if not all(np.isfinite(raw[k]) for k in needed):
         return dead()
 
     gait = 0.5 * (raw["stance_flatness"] / baseline["stance_flatness"]
                   + raw["velocity_ripple"] / baseline["velocity_ripple"])
-    wear_ratio = raw["wear"] / baseline["wear"]
+    wear_ratio = raw[wear_key] / baseline[wear_key]
 
     g = [FLOOR - raw["step_length"] / baseline["step_length"],
          FLOOR - raw["ground_clearance"] / baseline["ground_clearance"],
@@ -171,6 +181,40 @@ def nondominated(F):
         if dominated.any():
             keep[i] = False
     return keep
+
+
+#: Reference point for `hypervolume`. Both objectives are ratios to Jansen, so
+#: Jansen sits at exactly (1, 1) and the unit square below-left of it is the
+#: entire space of designs that beat it on both counts.
+JANSEN_POINT = (1.0, 1.0)
+
+
+def hypervolume(F, ref=JANSEN_POINT):
+    """Area of the box below-left of `ref` that a point set dominates.
+
+    Comparing two Pareto fronts needs one number, and this is the honest one.
+    It rewards a front for being both *good* - close to the origin - and *wide*
+    - spread along the trade-off - which is what a front is for. "Best gait
+    error" can be moved by a single lucky design at one corner; hypervolume
+    cannot.
+
+    With `ref` at Jansen, the answer reads directly as a fraction: 0 means
+    nothing on the front beats Jansen, 0.25 means the front dominates a quarter
+    of the improvement space that was available.
+
+    Standard 2-D sweep: sort by the first objective, walk left to right, and add
+    each strip that reaches below every strip before it. A point that fails to
+    beat `ref` on both objectives contributes nothing, which is the behaviour we
+    want - it has won no ground.
+    """
+    P = sorted((p for p in np.atleast_2d(np.asarray(F, float))
+                if p[0] < ref[0] and p[1] < ref[1]), key=lambda p: p[0])
+    hv, floor = 0.0, float(ref[1])
+    for x, y in P:
+        if y < floor:
+            hv += (ref[0] - x) * (floor - y)
+            floor = y
+    return float(hv)
 
 
 #: Fraction of the starting population drawn near the baseline rather than
@@ -208,8 +252,38 @@ def seeded_population(pop, seed=0, fraction=SEEDED_FRACTION):
     return np.clip(X, lo, hi)
 
 
+#: Evaluating one design costs about 20 ms and the population is evaluated one
+#: generation at a time, so the search is trivially parallel across designs: no
+#: individual in a generation depends on any other. `run` spreads a generation
+#: over a process pool. The result is bit-identical to the serial version -
+#: `pool.map` preserves order and each evaluation is deterministic - so this is
+#: a wall-clock change only, not a numerical one. There is a test for that.
+_W = {}
+
+
+def _worker_init(baseline, n, min_angle, band, wear_key):
+    """Runs once per worker process. Ships the baseline over instead of per call."""
+    _W.update(baseline=baseline, n=n, min_angle=min_angle, band=band,
+              wear_key=wear_key)
+
+
+def _worker_eval(x):
+    f, g, _ = evaluate(np.asarray(x, float), _W["baseline"], n=_W["n"],
+                       min_angle=_W["min_angle"], band=_W["band"],
+                       wear_key=_W["wear_key"])
+    return f, g
+
+
+def _n_workers(workers, pop):
+    """How many processes to use. None means auto, 1 means stay in-process."""
+    import os
+    if workers is None:
+        workers = max(1, min(os.cpu_count() or 1, pop))
+    return max(1, int(workers))
+
+
 def run(seed=0, min_angle=None, pop=100, gens=80, n=N_EVAL, baseline=None,
-        verbose=False):
+        verbose=False, workers=1, band=M.DEFAULT_BAND, wear_key="wear"):
     """One NSGA-II run. Returns a dict of design vectors, objectives, constraints.
 
     NSGA-II is a genetic algorithm for more than one objective: it keeps a
@@ -219,40 +293,65 @@ def run(seed=0, min_angle=None, pop=100, gens=80, n=N_EVAL, baseline=None,
     ranked behind feasible ones by total constraint violation, which is how the
     search finds its way back into the feasible shell described in
     `seeded_population`.
+
+    `workers` sets how many processes evaluate a generation at once: 1 stays
+    in-process (the default, and what the tests use), None uses every core.
+    Callers that pass anything other than 1 must be under an
+    `if __name__ == "__main__"` guard, because Windows starts subprocesses by
+    re-importing the calling module.
     """
-    from pymoo.core.problem import ElementwiseProblem
+    from pymoo.core.problem import Problem
     from pymoo.algorithms.moo.nsga2 import NSGA2
     from pymoo.operators.crossover.sbx import SBX
     from pymoo.operators.mutation.pm import PM
     from pymoo.optimize import minimize
 
-    base = jansen_baseline(n=n) if baseline is None else baseline
+    base = (jansen_baseline(n=n, band=band) if baseline is None else baseline)
     lo, hi = bounds()
     n_con = 4 if min_angle is None else 5
+    nw = _n_workers(workers, pop)
 
-    class LegProblem(ElementwiseProblem):
+    class LegProblem(Problem):
         def __init__(self):
             super().__init__(n_var=len(DESIGN_KEYS), n_obj=2, n_ieq_constr=n_con,
                              xl=lo, xu=hi)
 
-        def _evaluate(self, x, out, *args, **kwargs):
-            f, g, _ = evaluate(x, base, n=n, min_angle=min_angle)
-            out["F"], out["G"] = f, g
+        def _evaluate(self, X, out, *args, **kwargs):
+            X = np.atleast_2d(X)
+            if pool is None:
+                _worker_init(base, n, min_angle, band, wear_key)
+                rows = [_worker_eval(x) for x in X]
+            else:
+                rows = pool.map(_worker_eval, list(X))
+            out["F"] = np.array([r[0] for r in rows], float)
+            out["G"] = np.array([r[1] for r in rows], float)
 
-    res = minimize(
-        LegProblem(),
-        NSGA2(pop_size=pop, sampling=seeded_population(pop, seed=seed),
-              crossover=SBX(prob=0.9, eta=15), mutation=PM(eta=20),
-              eliminate_duplicates=True),
-        ("n_gen", gens), seed=seed, verbose=verbose, save_history=False)
+    pool = None
+    try:
+        if nw > 1:
+            import multiprocessing as mp
+            pool = mp.Pool(nw, initializer=_worker_init,
+                           initargs=(base, n, min_angle, band, wear_key))
+        res = minimize(
+            LegProblem(),
+            NSGA2(pop_size=pop, sampling=seeded_population(pop, seed=seed),
+                  crossover=SBX(prob=0.9, eta=15), mutation=PM(eta=20),
+                  eliminate_duplicates=True),
+            ("n_gen", gens), seed=seed, verbose=verbose, save_history=False)
+    finally:
+        if pool is not None:
+            pool.terminate()
+            pool.join()
 
     if res.X is None:
         return dict(X=np.zeros((0, len(DESIGN_KEYS))), F=np.zeros((0, 2)),
-                    G=np.zeros((0, n_con)), seed=seed, min_angle=min_angle)
+                    G=np.zeros((0, n_con)), seed=seed, min_angle=min_angle,
+                    band=band, wear_key=wear_key)
     X = np.atleast_2d(res.X)
     F = np.atleast_2d(res.F)
     G = np.atleast_2d(res.G) if res.G is not None else np.zeros((len(X), n_con))
-    return dict(X=X, F=F, G=G, seed=seed, min_angle=min_angle)
+    return dict(X=X, F=F, G=G, seed=seed, min_angle=min_angle, band=band,
+                wear_key=wear_key)
 
 
 def merge(runs):
@@ -260,9 +359,20 @@ def merge(runs):
 
     The paper merges three runs; genetic algorithms are stochastic, so one run
     can miss a corner of the front that another finds.
+
+    Every run coming back empty is a legitimate answer, not an error: tighten
+    the transmission-angle constraint far enough and there is nothing feasible
+    left to find, which is precisely the measurement `scripts/robustness.py`
+    goes looking for. So this returns correctly-shaped empty arrays rather than
+    letting `vstack` raise on an empty list.
     """
-    X = np.vstack([r["X"] for r in runs if len(r["X"])])
-    F = np.vstack([r["F"] for r in runs if len(r["F"])])
+    kept = [r for r in runs if len(r["X"])]
+    if not kept:
+        n_var = len(runs[0]["X"][0]) if runs and len(runs[0]["X"]) \
+            else len(DESIGN_KEYS)
+        return np.zeros((0, n_var)), np.zeros((0, 2))
+    X = np.vstack([r["X"] for r in kept])
+    F = np.vstack([r["F"] for r in kept])
     if not len(F):
         return X, F
     keep = nondominated(F)
@@ -271,16 +381,27 @@ def merge(runs):
     return X[order], F[order]
 
 
-def refine(X, baseline, n=1440, min_angle=None):
+def refine(X, baseline, n=M.N_PUBLISHED, min_angle=None,
+           band=M.DEFAULT_BAND, wear_key="wear"):
     """Re-score final designs at a finer crank sample.
 
     The search runs at a coarse sample for speed. Anything that gets published
     is recomputed here, so no headline number rests on the optimizer's
     shortcut.
+
+    **`baseline` must be `jansen_baseline(n=n)`, at this same sample count.**
+    Both objectives are ratios, and the numerator and the denominator have to be
+    measured the same way or the ratio picks up the difference between two
+    sample counts as if it were a difference between two designs. Stance
+    flatness moves 3.7% between n=360 and n=1440, which is the same order as the
+    gap between neighbouring designs on the front - large enough to matter, small
+    enough to look like a result. `run_optimization.py` passes the coarse
+    baseline to `run` and this one to `refine`, deliberately.
     """
     rows = []
     for x in np.atleast_2d(X):
-        f, g, raw = evaluate(x, baseline, n=n, min_angle=min_angle)
+        f, g, raw = evaluate(x, baseline, n=n, min_angle=min_angle,
+                             band=band, wear_key=wear_key)
         rows.append(dict(x=np.asarray(x, float).tolist(), gait_error=float(f[0]),
                          wear_ratio=float(f[1]), feasible=bool(np.all(g <= 1e-9)),
                          **{k: (float(v) if isinstance(v, (int, float, np.floating))

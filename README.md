@@ -15,21 +15,29 @@ reported numbers, and a DXF export so a design leaves the repo as something you 
 
 **What it found:** the paper's Table 4 baseline cannot come from any single definition of
 stance; its mean-force wear shortcut costs 51% rather than the 3–4% it claims; its 56% wear
-reduction does not reproduce (we find 25%); and its central claim — that Jansen's linkage is
+reduction does not reproduce (we find 24%); and its central claim — that Jansen's linkage is
 Pareto-dominated — does.
 
-## Reproduce everything in four commands
+## Reproduce everything in two commands
 
 ```
 pip install -e .
-pytest                                  # 76 tests
-python scripts/mechanics_report.py      # pin forces, wear breakdown, transmission angles
-python scripts/run_optimization.py      # both Pareto fronts (~20 min)
-python scripts/make_figures.py          # every figure below
+python scripts/reproduce.py             # every number and figure below (~10 min)
 ```
 
-`scripts/gait_report.py` regenerates the gait metrics and the stance-band sensitivity study.
-Every number quoted below comes from one of these four scripts; none is quoted from the paper
+`reproduce.py` runs the four stages in the order they depend on each other — gait metrics,
+mechanics, both Pareto fronts, then the figures — and each is still runnable on its own:
+
+```
+pytest                                  # 90 tests
+python scripts/gait_report.py           # Jansen baseline + stance-band sensitivity
+python scripts/mechanics_report.py      # pin forces, wear breakdown, transmission angles
+python scripts/run_optimization.py      # both Pareto fronts (~10 min, all cores)
+python scripts/make_figures.py          # every figure below
+python scripts/robustness.py            # the four robustness studies (~50 min)
+```
+
+Every number quoted below comes from one of these scripts; none is quoted from the paper
 except where it is explicitly labelled as the paper's.
 
 ---
@@ -39,7 +47,9 @@ except where it is explicitly labelled as the paper's.
 Stance is defined as the longest unbroken arc of the crank turn spent within 1% of the foot
 path's height above its lowest point — a *fraction* of path height, not a fixed tolerance in
 millimetres, so every metric is scale-invariant. Full definitions in
-[`docs/METRIC_DEFINITIONS.md`](docs/METRIC_DEFINITIONS.md).
+[`docs/METRIC_DEFINITIONS.md`](docs/METRIC_DEFINITIONS.md). Every table in this repo is
+measured at **1440 crank samples**; stance is an arc, so its measured extent depends on how
+finely the turn is sampled, and one count is quoted everywhere.
 
 | Metric | Ours | Paper (Table 4) | Difference |
 |---|---|---|---|
@@ -103,8 +113,8 @@ furthest. Wear is force times distance, and on this linkage distance does most o
 
 ### 3. We cannot reproduce the paper's 56% wear reduction
 
-Its two gait claims land close (20% and 52% against its 28% and 58%). Its wear claim does not:
-the lowest wear ratio anywhere on our front is **0.754** — 25% less, not 56% — and the design
+Its two gait claims land close (17% and 51% against its 28% and 58%). Its wear claim does not:
+the lowest wear ratio anywhere on our front is **0.758** — 24% less, not 56% — and the design
 that gets there gives up gait to do it. See the optimization section below.
 
 ---
@@ -151,26 +161,36 @@ on the front beat it on gait error *and* wear at once. The magnitude does not re
 
 | Claim | Paper | Ours |
 |---|---|---|
-| Stance flatness | 28% better | 20% better |
-| Velocity ripple | 58% better | 52% better |
-| Wear | 56% less | **25% less** |
-| Link-length changes | ≤29% | ≤4.6% |
+| Stance flatness | 28% better | 17% better |
+| Velocity ripple | 58% better | 51% better |
+| Wear | 56% less | **24% less** |
+| Link-length changes | ≤29% | ≤8.5% |
 
 **And our own added constraint turned out to be nearly free — reported as the negative result
 it is.** Across the 20 designs on the paper's unconstrained front, the minimum loaded
-transmission angle runs 41.9°–52.0°. Not one violates the 40° rule, the two fronts lie almost
-on top of each other, and the small gap between them is run-to-run variation in a stochastic
-search rather than a price paid. The paper's omission did not damage its conclusions here —
-but that is a finding about this problem, not a general licence to skip the check, and it cost
-one extra geometric evaluation per design to establish. The part of the extension that
-*changes* an answer is the loaded/unloaded distinction above.
+transmission angle runs 41.9°–52.0°, median 48.3°. Not one violates the 40° rule, and the two
+fronts lie almost on top of each other.
+
+That the remaining gap is *search noise rather than a cost* is the load-bearing sentence of
+the negative result, so it is measured rather than asserted: running the unconstrained
+campaign again with different random seeds moves the front further than adding the constraint
+does. The numbers are in [`docs/RESULTS.md`](docs/RESULTS.md) §7, from
+`scripts/robustness.py`.
+
+Sweeping the threshold turns the null into a design guideline rather than leaving it a
+shrug — the constraint is free up to a point and then is not, and §7 says where. The
+paper's omission did not damage its conclusions here, but that is a finding about this
+problem, not a general licence to skip the check, and it cost one extra geometric evaluation
+per design to establish. The part of the extension that *changes* an answer is the
+loaded/unloaded distinction above.
 
 One more finding, which changed how the search had to be run: of 600 designs drawn uniformly
 from the paper's own ±30% box, 17% assemble and **none** satisfy the paper's constraints.
 Stance is a band near the lowest point of the path, so a design that loses Jansen's unusually
 flat bottom also loses most of the arc that counts as stance, and its measured step length
-collapses with it. The feasible set is a thin shell around Jansen — which is also why our
-optima sit 4.6% from Jansen where the paper's sit 29% away — and the search is seeded there.
+collapses with it. The feasible set is a thin shell around Jansen — which is also why no
+design on our front moves a link by more than 8.5% where the paper's move by 29% — and the
+search is seeded there.
 
 ![foot paths](figures/foot_paths.png)
 
@@ -193,6 +213,10 @@ SolidWorks.
 | `constraints.py` | Loaded transmission angle, force amplification, branch consistency |
 | `optimize.py` | NSGA-II over the ten link lengths, two objectives, four or five constraints |
 | `cad.py` | DXF R12 assembly, cuttable link profiles, coordinate CSV |
+
+Scripts: `reproduce.py` runs everything; `gait_report.py`, `mechanics_report.py`,
+`run_optimization.py` and `make_figures.py` are the four stages; `robustness.py` is the
+seed / objective / threshold / stance-band study behind §7 of the results.
 
 The eleven bars are modelled as **7 rigid bodies and exactly 10 revolute joints** — `b,d,e`
 close one triangle and `g,h,i` close another, and a triangle of rigid bars is one rigid body.

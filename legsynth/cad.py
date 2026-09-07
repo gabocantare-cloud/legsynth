@@ -34,7 +34,6 @@ import os
 
 import numpy as np
 
-from .kinematics import JansenLeg
 
 #: The eleven bars, as (link key, joint, joint).
 BARS = (("m", "O", "J1"), ("j", "J1", "J2"), ("b", "G", "J2"),

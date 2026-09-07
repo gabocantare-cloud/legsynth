@@ -189,6 +189,20 @@ Table 4 is the whole paper. Jansen's baseline is one row; optimized designs are 
 
 These five are your reproduction targets. Everything you build gets checked against them.
 
+**Read that sentence with one caveat, which we only learned by doing it.** Two of the
+five reproduce (step length to 0.3%, velocity ripple to 3.8%) and three do not — and the
+reason is not that our code is wrong. The paper never publishes its formula for "stance",
+and when you invert the question and ask which stance threshold each of its five numbers
+would require, you get five mutually incompatible answers spanning a factor of 90. The row
+is internally inconsistent, so no single implementation can hit all five. Its 25.7 mm
+ground clearance is not even a threshold question: it is taller than the entire foot path
+is tall.
+
+So treat Table 4 as five targets you are trying to *understand*, not five targets you are
+trying to *hit*. The full argument, and the inversion that establishes it, is in
+[`METRIC_DEFINITIONS.md`](METRIC_DEFINITIONS.md). Do not tune anything to close these gaps
+— the disagreements are the most defensible part of the repo.
+
 ## Stop 2: Kinematic Model section (20 min)
 
 This is the part your code **already does**. Read it with `legsynth/kinematics.py` open
@@ -266,8 +280,8 @@ reports the numbers but not the equations, so literally nobody can reproduce his
 Your repo publishes explicit definitions (`docs/METRIC_DEFINITIONS.md`) and shows how much
 each number moves when you change the one threshold they all hang on.
 
-**This is now filled, and it turned into a finding.** With our definitions we get 43.49 mm
-step length against his 43.3 mm, and 0.0918 velocity ripple against his 0.0956 — both
+**This is now filled, and it turned into a finding.** With our definitions we get 43.41 mm
+step length against his 43.3 mm, and 0.0920 velocity ripple against his 0.0956 — both
 reproduced. But turn the question around and ask what threshold would be needed to reproduce
 *each* of his five numbers, and you get five different thresholds spanning a factor of 90.
 His Table 4 Jansen row cannot have come from one consistent definition. His 25.7 mm ground

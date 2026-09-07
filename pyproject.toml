@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 dependencies = ["numpy", "scipy", "matplotlib", "pillow", "pymoo"]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "ruff"]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -14,3 +14,13 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["legsynth"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# `O` is the crank centre. Every joint in this repo is named after the paper's
+# figure - O, G, J1..J5, F - and renaming one of them to satisfy a linter would
+# make the code harder to check against the paper, which is the whole point.
+ignore = ["E741"]

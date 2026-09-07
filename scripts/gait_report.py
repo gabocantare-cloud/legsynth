@@ -19,7 +19,7 @@ from legsynth.kinematics import JansenLeg                     # noqa: E402
 from legsynth import metrics as M                             # noqa: E402
 
 JANSEN_BRANCH = (-1, -1, 1, -1, 1)
-N_SAMPLES = 3600
+N_SAMPLES = M.N_PUBLISHED   # one sample count behind every published table
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ORDER = ("step_length", "ground_clearance", "stance_flatness",
@@ -48,7 +48,8 @@ def main():
     print("Jansen baseline, holy numbers, branch", JANSEN_BRANCH)
     print(f"foot path: {np.ptp(path[:, 0]):.2f} mm wide x {H:.2f} mm tall, "
           f"{N_SAMPLES} crank samples")
-    print(f"stance band: {M.DEFAULT_BAND:.1%} of path height = {M.DEFAULT_BAND * H:.4f} mm\n")
+    print(f"stance band: {M.DEFAULT_BAND:.1%} of path height "
+          f"= {M.DEFAULT_BAND * H:.4f} mm\n")
 
     print("1. OURS vs PAPER (Wang 2026, Table 4)")
     print(f"{'Metric':<18}{'Ours':>12}{'Paper':>12}{'Diff':>10}")
@@ -85,7 +86,8 @@ def main():
     finite = [b for b in needed.values() if np.isfinite(b)]
     if len(finite) > 1:
         spread = max(finite) / min(finite)
-        print(f"\nSpread between the bands the paper's own numbers require: {spread:.0f}x.")
+        print("\nSpread between the bands the paper's own numbers "
+              f"require: {spread:.0f}x.")
         print("No single stance definition reproduces Table 4's Jansen row.")
 
     out = dict(
@@ -124,7 +126,8 @@ def _plot(path, rows):
     ax1.set_xlabel("stance band (% of path height)")
     ax1.set_ylabel("step length (mm)")
     ax1.set_title("Step length vs stance definition")
-    ax1.legend(fontsize=8); ax1.grid(alpha=0.3)
+    ax1.legend(fontsize=8)
+    ax1.grid(alpha=0.3)
 
     ax2.plot(100 * bands, [100 * r["duty_factor"] for r in rows], "o-",
              color="tab:green")
@@ -134,7 +137,8 @@ def _plot(path, rows):
     ax2.set_xlabel("stance band (% of path height)")
     ax2.set_ylabel("duty factor (%)")
     ax2.set_title("Duty factor vs stance definition")
-    ax2.legend(fontsize=8); ax2.grid(alpha=0.3)
+    ax2.legend(fontsize=8)
+    ax2.grid(alpha=0.3)
 
     fig.tight_layout()
     os.makedirs(os.path.join(ROOT, "figures"), exist_ok=True)

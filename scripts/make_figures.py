@@ -15,8 +15,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from legsynth.kinematics import JansenLeg, DESIGN_KEYS, HOLY   # noqa: E402
-from legsynth import metrics as M, dynamics as D, wear as W    # noqa: E402
+from legsynth.kinematics import JansenLeg   # noqa: E402
+from legsynth import dynamics as D, wear as W    # noqa: E402
 from legsynth import constraints as C, optimize as O           # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -161,7 +161,8 @@ def fig_foot_paths(res):
     if front:
         best_gait = min(front, key=lambda r: r["gait_error"])
         best_wear = min(front, key=lambda r: r["wear_ratio"])
-        picks = [(best_gait, "tab:blue", "best gait"), (best_wear, "tab:green", "best wear")]
+        picks = [(best_gait, "tab:blue", "best gait"),
+                 (best_wear, "tab:green", "best wear")]
     for row, colour, label in picks:
         leg = O.leg_from_vector(row["x"])
         q = leg.foot_path(720)

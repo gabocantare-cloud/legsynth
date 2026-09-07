@@ -88,8 +88,9 @@ writes the formulas down), branch/circuit defect checking, and DXF export for So
 - `tolerance_sweep` publishes the sensitivity; `band_matching` inverts it.
 
 Measured baseline from this code, at band = 1% (0.2246 mm): foot path 67.9 mm wide ×
-22.5 mm tall; step length 43.49 mm; ground clearance 22.23 mm; stance flatness 0.0011;
-velocity ripple 0.0918; duty factor 31.2%. Regenerate with `python scripts/gait_report.py`.
+22.5 mm tall; step length 43.41 mm; ground clearance 22.23 mm; stance flatness 0.0011;
+velocity ripple 0.0920; duty factor 31.2%, all at `metrics.N_PUBLISHED` = 1440 crank
+samples. Regenerate with `python scripts/gait_report.py`.
 
 **The step-length discrepancy is resolved and documented.** Inverting the question — what
 band would reproduce each of the paper's Table 4 numbers? — gives 0.35% for his duty factor,
