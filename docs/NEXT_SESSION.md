@@ -4,9 +4,9 @@ Written at the end of the session that worked through the previous handoff: git 
 the sample-count unification, the parallel optimizer, the four robustness studies, and the
 clearance fit.
 
-**State on arrival: 91 tests passing, `ruff` clean, four commits on `main`, every documented
-number regenerated from code that ran in this repo.** The prioritised list below is short,
-because the previous one is done.
+**State on arrival: 91 tests passing, `ruff` clean, seven commits on `main`, nothing
+uncommitted, every documented number regenerated from code that ran in this repo.** The
+prioritised list below is short, because the previous one is done.
 
 **Read `## Ground rules` at the bottom before changing anything.** Several decisions in this
 repo look wrong until you know why they were made, and two of the bugs found last session
@@ -14,9 +14,35 @@ were introduced by exactly that kind of well-meaning fix.
 
 ---
 
-## P0 — Blocking, and only you can do it
+## Read this first: an audit comes before the push
 
-1. **Push to GitHub.** The repository exists locally with four commits and nothing uncommitted.
+Gabriel has decided the repo gets an independent audit before it goes public, and he drives
+that with a pasted prompt rather than from this file. If he has handed you an audit brief,
+**follow it and ignore the P0 below** — the push is deliberately blocked until the audit and
+its fixes are done.
+
+The chain is three sessions:
+
+1. **build the inspector and audit** — create `.claude/skills/` (`audit-numbers`,
+   `audit-code`, `audit-repro`, `audit-claims`, `audit-portfolio`, `audit-all`) plus
+   `scripts/verify_docs.py`, then write `docs/audit/FINDINGS.md`. Report only; fix nothing.
+2. **fix** — work through `FINDINGS.md`. Everything in it is meant to be fixed; severity
+   orders the work rather than deciding whether it happens.
+3. **publish** — then, and only then, the P0 below.
+
+The reason for the separation is worth knowing, because it is the whole point: this session's
+documentation and its `results/*.json` were produced by the *same* AI session, so an auditor
+that confirms the prose against the JSON has proved nothing. Every document in this repo —
+including this one and `CLAUDE.md` — is the **subject** of that audit, not evidence for it.
+`audit-claims` is authorised to challenge the conclusions themselves, not just the arithmetic,
+and to recommend that an overstated finding be weakened or deleted.
+
+---
+
+## P0 — after the audit, and only you can do it
+
+1. **Push to GitHub.** The repository exists locally with seven commits and nothing
+   uncommitted.
    It has never been pushed, and creating a public repo under your account is not something an
    agent should do on your behalf.
    ```
