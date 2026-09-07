@@ -290,11 +290,14 @@ optimizes for wear while ignoring the geometry that drives wear got away with it
 this time; that is worth knowing, and it is worth knowing *why*.
 
 Second, the constraint is doing quiet work at the edges. The two designs on the
-constrained front nearest the boundary sit at 42.0°, so the feasible region is
-genuinely bounded by it — the search is just not choosing to go there, because
-shallow-angle designs are not attractive on either objective anyway. Wear and
-transmission angle turn out to be partly aligned objectives on this mechanism,
-which is a satisfying reason for the null result rather than a coincidence.
+constrained front nearest the boundary sit at 42.0° and 42.4°, so the feasible
+region is genuinely bounded by it — the search is just not choosing to go there,
+because shallow-angle designs are not attractive on either objective anyway. Wear
+and transmission angle turn out to be partly aligned objectives on this
+mechanism: a shallow angle puts large forces through the pins, and large pin
+forces are what the wear objective is already punishing. That is a satisfying
+reason for the null result rather than a coincidence, and §7 tests it by
+tightening the constraint until it does bite.
 
 **What actually made the extension worth doing** is not the constraint but the
 loaded/unloaded distinction in §4. That one changes an answer: naive whole-cycle
