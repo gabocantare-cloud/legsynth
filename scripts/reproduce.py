@@ -14,15 +14,23 @@ because each one leaves a file the next one reads:
                           results/pareto.json, so this must come last
                           -> figures/*.png, figures/optimized_leg.gif
 
-`robustness.py` is deliberately *not* in the default list. It is the
-measurement layer behind docs/RESULTS.md section 7 and it costs ten campaigns;
-pass --with-robustness when you want it.
+Two more scripts are deliberately *not* in the default list, because between
+them they cost a dozen more optimization campaigns:
+
+  robustness.py     the seed / objective / threshold / stance-band studies
+                    behind docs/RESULTS.md section 7
+                    -> results/robustness.json
+  clearance_fit.py  the last open discrepancy: whether any nearby link set
+                    gives both of the Table 4 numbers we cannot reproduce
+                    -> results/clearance_fit.json
+
+Pass --with-studies to include them.
 
 Run:
 
-    python scripts/reproduce.py                    # the four, ~20 min
-    python scripts/reproduce.py --quick            # smoke test, ~2 min
-    python scripts/reproduce.py --with-robustness  # everything, ~50 min
+    python scripts/reproduce.py                  # the four, ~10 min
+    python scripts/reproduce.py --quick          # smoke test, ~2 min
+    python scripts/reproduce.py --with-studies   # everything, ~1 h
 
 Exit status is non-zero if any stage fails, so CI can use this directly.
 """
@@ -44,7 +52,10 @@ STAGES = [
     ("make_figures.py", []),
 ]
 
-ROBUSTNESS = ("robustness.py", ["--quick"])
+STUDIES = [
+    ("robustness.py", ["--quick"]),
+    ("clearance_fit.py", []),
+]
 
 
 def stage(script, args, quick):
@@ -63,13 +74,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true",
                     help="pass --quick to the expensive stages; smoke test only")
-    ap.add_argument("--with-robustness", action="store_true",
-                    help="also run the four robustness studies (adds ~30 min)")
+    ap.add_argument("--with-studies", action="store_true",
+                    help="also run robustness.py and clearance_fit.py (adds ~45 min)")
     args = ap.parse_args()
 
-    stages = list(STAGES)
-    if args.with_robustness:
-        stages.append(ROBUSTNESS)
+    stages = list(STAGES) + (STUDIES if args.with_studies else [])
 
     t0, failed = time.perf_counter(), []
     for script, extra in stages:

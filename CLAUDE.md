@@ -75,9 +75,9 @@ writes the formulas down), branch/circuit defect checking, and DXF export for So
 - **Branch selection is solved.** All 32 sign combinations were swept; `(-1,-1,1,-1,1)` is
   the one that reproduces the real Jansen foot path. Do not change this without re-running
   the sweep.
-- Five passing tests, including a rigidity check on all eleven links across 200 poses.
+- Tested, including a rigidity check on all eleven links across 200 poses.
 
-`legsynth/metrics.py` is complete and verified (15 passing tests):
+`legsynth/metrics.py` is complete and verified:
 
 - All five gait metrics with the formulas published in `docs/METRIC_DEFINITIONS.md`.
 - **Stance is defined as** the longest unbroken arc of the crank turn spent within
@@ -132,19 +132,38 @@ too, making the feasible set a thin shell around Jansen.
 
 `legsynth/cad.py` — DXF R12 assembly, cuttable link profiles, coordinate CSV.
 
-**Optimization results (100 pop x 80 gen x 3 seeds x 2 campaigns, 20 min):** the paper's
-central claim reproduces — all 20 designs on the front dominate Jansen on both objectives. Its
-magnitudes do not: we get 20% flatter stance and 52% lower ripple against its 28% and 58%, but
-only **25% less wear against its claimed 56%**, and our optima sit 4.6% from Jansen where its
-sit 29% away.
+**Optimization results (100 pop x 80 gen x 3 seeds x 2 campaigns, ~10 min on 12 cores):**
+the paper's central claim reproduces — all 20 designs on the front dominate Jansen on both
+objectives. Its magnitudes do not: we get 17% flatter stance and 51% lower ripple against its
+28% and 58%, but only **24% less wear against its claimed 56%**, and no design on our front
+moves a link more than 8.5% where its move 29%.
+
+Both objectives are ratios to Jansen, so **the baseline has to be measured at the same crank
+sample count as the designs it normalises**. It was not, for a while: designs were scored at
+1440 samples and divided by a Jansen measured at 360, which shifted every published ratio by
+about a percent — small enough to look like a result. `refine` now takes its own baseline and
+`tests/test_published_numbers.py` pins it. `metrics.N_PUBLISHED` = 1440 is the single sample
+count behind every table in the repo; do not quote a number generated at any other.
 
 **Our added constraint turned out to be non-binding** — no design on the paper's unconstrained
-front violates the 40 deg rule (range 41.9-52.0 deg), the two fronts nearly coincide, and the
-gap between them is search noise, not a cost. This is written up as a negative result and must
-stay written up that way. The part of the extension that actually changes an answer is the
-loaded/unloaded distinction, not the constraint.
+front violates the 40 deg rule (range 41.9-52.0 deg, median 48.3) and the two fronts nearly
+coincide. This is written up as a negative result and must stay written up that way. The part
+of the extension that actually changes an answer is the loaded/unloaded distinction, not the
+constraint.
 
-Full numbers and the argument behind each in `docs/RESULTS.md`. 76 passing tests.
+That the remaining gap is *noise rather than a cost* is measured, not asserted:
+`scripts/robustness.py` re-runs the unconstrained campaign under different random seeds and
+compares the spread against the gap, sweeps the constraint threshold to find where it starts
+costing something, swaps the objective to the integrated wear form, and re-runs at stance
+bands of 0.5% and 2%. Results in `docs/RESULTS.md` §7. `docs/DEFENDING_THIS.md` is the
+interview-facing version of all of it.
+
+Full numbers and the argument behind each in `docs/RESULTS.md`.
+
+**Do not hardcode the test count in prose.** It used to appear in three documents and
+went stale in all of them the first time a test was added. `README.md` quotes it once,
+beside the `pytest` line where a reader can check it in one command; nowhere else
+should.
 
 ## Starting a new session
 

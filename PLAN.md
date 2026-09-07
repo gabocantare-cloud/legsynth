@@ -64,10 +64,10 @@ mechanically sane to build:
 - **Branch selection solved.** All 32 sign combinations were swept; `(-1,-1,1,-1,1)` is
   the one that reproduces the real Jansen foot path. This is the part that normally eats
   an entire weekend, and it is behind you.
-- 5 passing tests, including a check that all 11 links stay rigid to 1e-9 at 200 poses.
+- Tested, including a check that all 11 links stay rigid to 1e-9 at 200 poses.
 
 `legsynth/metrics.py` — all five gait metrics, formulas published in
-`docs/METRIC_DEFINITIONS.md`, 15 passing tests.
+`docs/METRIC_DEFINITIONS.md`.
 
 - Stance = the longest unbroken arc of the crank turn within `band × path height` of the
   lowest point of the foot path, `band = 0.01`. Using a *fraction* of path height rather
@@ -92,7 +92,7 @@ is larger than our entire foot path is tall (22.46 mm), so no stance rule can pr
 That points to slightly different link lengths or an unstated normalization. Worth one
 hour, not five.
 
-`legsynth/dynamics.py`, `wear.py`, `constraints.py`, `optimize.py`, `cad.py` — all complete,
+`legsynth/dynamics.py`, `wear.py`, `constraints.py`, `optimize.py`, `cad.py` — all complete.
 Numbers and arguments in `docs/RESULTS.md`. Four findings worth defending
 in an interview, plus one honest negative:
 

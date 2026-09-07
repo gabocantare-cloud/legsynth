@@ -35,6 +35,7 @@ python scripts/mechanics_report.py      # pin forces, wear breakdown, transmissi
 python scripts/run_optimization.py      # both Pareto fronts (~10 min, all cores)
 python scripts/make_figures.py          # every figure below
 python scripts/robustness.py            # the four robustness studies (~50 min)
+python scripts/clearance_fit.py         # the last open discrepancy (~5 min)
 ```
 
 Every number quoted below comes from one of these scripts; none is quoted from the paper
@@ -216,12 +217,23 @@ SolidWorks.
 
 Scripts: `reproduce.py` runs everything; `gait_report.py`, `mechanics_report.py`,
 `run_optimization.py` and `make_figures.py` are the four stages; `robustness.py` is the
-seed / objective / threshold / stance-band study behind §7 of the results.
+seed / objective / threshold / stance-band study behind §7 of the results; `clearance_fit.py`
+tests whether the one Table 4 number we cannot reproduce is a link-length question.
 
 The eleven bars are modelled as **7 rigid bodies and exactly 10 revolute joints** — `b,d,e`
 close one triangle and `g,h,i` close another, and a triangle of rigid bars is one rigid body.
 That derives the paper's joint count rather than assuming it, and Grübler agrees:
 3(8−1) − 2(10) = 1 DOF.
+
+## Reading this repo
+
+| If you want | Read |
+|---|---|
+| The short version | this page |
+| Every number, and the argument behind each | [`docs/RESULTS.md`](docs/RESULTS.md) |
+| The five findings as you would defend them out loud | [`docs/DEFENDING_THIS.md`](docs/DEFENDING_THIS.md) |
+| The gait-metric formulas the paper never writes down | [`docs/METRIC_DEFINITIONS.md`](docs/METRIC_DEFINITIONS.md) |
+| A plain-language walkthrough of the paper itself | [`docs/PAPER_GUIDE.md`](docs/PAPER_GUIDE.md) |
 
 ## Citation
 
