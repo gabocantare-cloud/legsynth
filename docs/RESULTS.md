@@ -144,7 +144,7 @@ produces an obviously wrong answer.
 ![transmission angle](../figures/transmission_angle.png)
 
 Both numbers are correct; they answer different questions. The 8.6° minimum
-happens at crank angle 191°, in mid-swing, with the foot in the air and **0.6 N**
+happens at crank angle 192°, in mid-swing, with the foot in the air and **0.6 N**
 in the pin. The largest pin force of the cycle, 25.8 N, arrives at crank 335°
 where the worst interface is at a healthy 48°. A shallow angle only costs you
 something when there is force behind it.

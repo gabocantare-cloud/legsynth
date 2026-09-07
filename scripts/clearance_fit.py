@@ -39,8 +39,12 @@ destroys the velocity ripple is not the design the paper measured either, since
 the paper's ripple *does* reproduce against ours. So the fitted design is
 re-scored on all five Table 4 metrics.
 
-Writes results/clearance_fit.json. Run:  python scripts/clearance_fit.py
+Writes results/clearance_fit.json. Run:
+
+    python scripts/clearance_fit.py
+    python scripts/clearance_fit.py --quick   # smoke test, coarse search
 """
+import argparse
 import json
 import os
 import sys
@@ -152,6 +156,16 @@ def report(row):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--quick", action="store_true",
+                    help="coarse search; smoke test only, not a published answer")
+    args = ap.parse_args()
+    # A coarse global search that fails to find a fit proves nothing, so the
+    # quick mode writes somewhere else and its verdict is not quotable.
+    maxiter = 20 if args.quick else 200
+    seeds = (0,) if args.quick else (0, 1, 2)
+    weights = WEIGHTS[1:2] if args.quick else WEIGHTS[1:]
+
     t0 = time.perf_counter()
     print("Fitting the two Table 4 numbers our baseline does not reproduce:")
     print(f"  step length      {TARGET_STEP} mm   (ours: 43.41 mm, reproduces)")
@@ -160,7 +174,7 @@ def main():
           f"the paper's own bounds\n")
 
     print("STAGE 1 - is it reachable at all, ignoring closeness to Jansen?")
-    rows = [report(fit(0.0, seed=s)) for s in (0, 1, 2)]
+    rows = [report(fit(0.0, seed=s, maxiter=maxiter)) for s in seeds]
     best = min(rows, key=lambda r: r["residual"])
     reachable = best["hits_both_targets"]
     print(f"  --> best residual over three restarts: {best['residual']:.4f} "
@@ -169,7 +183,7 @@ def main():
     sweep = []
     if reachable:
         print("\nSTAGE 2 - how close to Jansen can a design get and still fit?")
-        sweep = [report(fit(w, seed=0)) for w in WEIGHTS[1:]]
+        sweep = [report(fit(w, seed=0, maxiter=maxiter)) for w in weights]
         hits = [r for r in sweep + rows if r["hits_both_targets"]]
         closest = min(hits, key=lambda r: r["deviation"]) if hits else None
     else:
@@ -205,13 +219,16 @@ def main():
         targets=dict(step_length=TARGET_STEP, ground_clearance=TARGET_CLEARANCE),
         jansen=dict(zip(DESIGN_KEYS, JANSEN.tolist())),
         jansen_scored=score(JANSEN), design_keys=list(DESIGN_KEYS),
-        settings=dict(n_fit=N_FIT, n_report=M.N_PUBLISHED, weights=list(WEIGHTS),
+        settings=dict(n_fit=N_FIT, n_report=M.N_PUBLISHED,
+                      weights=[0.0] + list(weights), maxiter=maxiter,
+                      seeds=list(seeds), quick=args.quick,
                       tolerance=TOLERANCE, bound_fraction=O.BOUND_FRACTION),
         stage1=rows, stage2=sweep, reachable=reachable, closest=closest,
         runtime_s=time.perf_counter() - t0,
     )
     os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
-    dest = os.path.join(ROOT, "results", "clearance_fit.json")
+    name = "clearance_fit_quick.json" if args.quick else "clearance_fit.json"
+    dest = os.path.join(ROOT, "results", name)
     with open(dest, "w") as fh:
         json.dump(out, fh, indent=2, default=float)
     print(f"\nwrote {os.path.relpath(dest, ROOT)} "

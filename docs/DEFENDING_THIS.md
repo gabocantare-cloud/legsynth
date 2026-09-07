@@ -107,7 +107,7 @@ keeps it above about 40°, and a paper about wear that never checks it has a rea
 a shallow angle *is* a wear mechanism.
 
 So we added the constraint — and Jansen fails it, at 8.6°. That should stop you, not please
-you. Look at *when* the 8.6° happens: crank angle 191°, mid-swing, foot in the air, with
+you. Look at *when* the 8.6° happens: crank angle 192°, mid-swing, foot in the air, with
 **0.6 N** in the pin. The largest pin force of the cycle, 25.8 N, arrives at crank 335°, where
 the worst interface sits at a healthy 48°. A shallow transmission angle only costs you
 something when there is force behind it.

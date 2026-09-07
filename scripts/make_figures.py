@@ -37,8 +37,8 @@ def _save(fig, name):
     print(f"wrote figures/{name}")
 
 
-def load_results():
-    path = os.path.join(ROOT, "results", "pareto.json")
+def load_results(name="pareto.json"):
+    path = os.path.join(ROOT, "results", name)
     if not os.path.exists(path):
         return None
     with open(path) as fh:
@@ -218,10 +218,52 @@ def fig_optimized_gif(res):
     print("wrote figures/optimized_leg.gif")
 
 
+def fig_threshold(rob):
+    """What the transmission-angle constraint costs as it is tightened.
+
+    The point of the figure is the *shape*, not any one bar. A null result -
+    "the constraint was free" - is a shrug. A curve that is flat and then turns
+    down says where the constraint stops being free, which is a number a
+    designer can use. The seed-to-seed band is drawn behind it because a change
+    smaller than the search's own run-to-run spread is not a change at all, and
+    a reader is entitled to see that comparison rather than be told it.
+    """
+    sweep = rob.get("threshold", {}).get("sweep")
+    free = rob.get("threshold", {}).get("unconstrained")
+    if not sweep or not free:
+        return
+    thresholds = [r["threshold"] for r in sweep]
+    hv = [r["hypervolume"] for r in sweep]
+    hv0 = free["hypervolume"]
+
+    fig, ax = plt.subplots(figsize=(6.6, 4.4))
+    noise = rob.get("seeds", {}).get("seed_spread_hypervolume")
+    if noise:
+        ax.axhspan(hv0 - noise, hv0 + noise, color="tab:blue", alpha=0.12,
+                   label="seed-to-seed spread, unconstrained")
+    ax.axhline(hv0, ls="--", color="tab:blue", lw=1.5,
+               label=f"unconstrained ({hv0:.3f})")
+    ax.plot(thresholds, hv, "o-", color="tab:red", lw=2, ms=7,
+            label="with the constraint")
+    ax.set_xlabel("minimum loaded transmission angle enforced (deg)")
+    ax.set_ylabel("hypervolume dominated (Jansen = reference)")
+    ax.set_title("What the manufacturability constraint costs")
+    ax.set_ylim(bottom=0.0)
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
+    _save(fig, "threshold_sweep.png")
+
+
 def main():
     leg = JansenLeg(branches=JANSEN_BRANCH)
     fig_transmission(leg)
     fig_wear(leg)
+    rob = load_results("robustness.json")
+    if rob is None:
+        print("results/robustness.json not found - run scripts/robustness.py "
+              "for the threshold figure")
+    else:
+        fig_threshold(rob)
     res = load_results()
     if res is None:
         print("results/pareto.json not found - run scripts/run_optimization.py "

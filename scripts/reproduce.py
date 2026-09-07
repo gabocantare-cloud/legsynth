@@ -54,7 +54,7 @@ STAGES = [
 
 STUDIES = [
     ("robustness.py", ["--quick"]),
-    ("clearance_fit.py", []),
+    ("clearance_fit.py", ["--quick"]),
 ]
 
 
