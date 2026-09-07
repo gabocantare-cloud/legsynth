@@ -118,6 +118,12 @@ cycle-mean-force shortcut costs **51%**, not the 3–4% it claims. Force and sli
 anti-correlated. Both calculations are validated by agreeing to 0.0% at the crank pin, the one
 joint where they must agree analytically.
 
+**Do not restore the claim that the bias cancels in the ratio.** It was asserted here for a
+while and §7.2 of `docs/RESULTS.md` measured it: optimising against the integrated form moves
+the best achievable gait error from 0.658 to 0.710, which is 1.8x the seed-to-seed spread.
+The central claim survives (Jansen is dominated under either wear definition); the "it all
+cancels" defence does not.
+
 `legsynth/constraints.py` — the extension. **The key result is the loaded/unloaded
 distinction:** Jansen's minimum transmission angle is 8.6° over the whole cycle but 42.7°
 during stance, because the shallow angle falls mid-swing with 0.6 N in the pin. The naive

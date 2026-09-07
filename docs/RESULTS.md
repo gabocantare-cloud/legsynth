@@ -119,9 +119,16 @@ calculations: at joint `O` they agree to 0.0%. That is the one joint where they
 is uniform in crank angle and averaging first is exact there. Both calculations
 are right; the shortcut is what is wrong.
 
-This does not overturn the paper's conclusions, because they are stated as
-ratios and the bias partly cancels between designs. It does mean the absolute
-wear numbers are high by about half.
+This does not overturn the paper's central conclusion, which is stated as a
+ratio: Jansen is Pareto-dominated under either wear definition. It does mean the
+absolute wear numbers are high by about half.
+
+It used to say, here, that the bias "partly cancels between designs, so the
+ratio-based conclusions survive". That was reasoning rather than measurement, and
+when it was finally measured it turned out to be wrong — re-running the campaign
+against the integrated wear form moves the front by more than the search's own
+run-to-run noise. The shortcut misplaces the *optimum*, not just the magnitude.
+See §7.2.
 
 ---
 
@@ -303,3 +310,206 @@ tightening the constraint until it does bite.
 loaded/unloaded distinction in §4. That one changes an answer: naive whole-cycle
 enforcement would have rejected Jansen's own linkage, and any front drawn under it
 would have been an artefact.
+
+---
+
+## 7. Four things this write-up used to assert, now measured
+
+Every claim in §6 above was once a sentence someone had reasoned their way to
+rather than measured. Four of them were load-bearing enough to be worth the
+compute, and `scripts/robustness.py` measures each one. Two came back confirming
+the sentence. One came back changing it. One came back with a curve where there
+had been a shrug.
+
+**How two fronts are compared.** Comparing two sets of points needs one number,
+and the honest one here is **hypervolume**: the area of the rectangle below-left
+of Jansen that a front manages to cover. Both objectives are ratios to Jansen, so
+Jansen sits at exactly (1, 1) and the unit square is the whole of what there is
+to win — hypervolume is the fraction of it won. It rewards a front for being both
+*good* (close to the origin) and *wide* (spread along the trade-off), and unlike
+"best gait error" it cannot be moved by one lucky design at one corner.
+
+### 7.1 The gap between the two fronts really is search noise
+
+§6 says the difference between the constrained and unconstrained fronts is
+run-to-run variation rather than a price paid for the constraint. That is the
+load-bearing sentence of the whole negative result, and it had never been
+measured. Measuring it is simple: run the *unconstrained* campaign three times
+with different random seeds and see how far the front moves on its own.
+
+| Campaign | Seeds | Front | Hypervolume | Best gait | Best wear |
+|---|---|---|---|---|---|
+| Unconstrained | 0, 1, 2 | 20 | 0.0684 | 0.658 | 0.758 |
+| Unconstrained | 3, 4, 5 | 23 | 0.0660 | 0.666 | 0.775 |
+| Unconstrained | 6, 7, 8 | 18 | 0.0673 | 0.688 | 0.744 |
+| **Constrained, 40°** | 0, 1, 2 | 19 | **0.0664** | **0.676** | **0.759** |
+
+| | Seed-to-seed spread | Constrained-vs-unconstrained gap |
+|---|---|---|
+| Hypervolume | 0.0024 | 0.0020 |
+| Best gait error | 0.0297 | 0.0180 |
+
+**The claim stands, and the cleanest way to say it is by inspection of the first
+table.** The constrained campaign's hypervolume, 0.0664, falls *inside* the range
+the three unconstrained campaigns span on their own (0.0660 to 0.0684). So does
+its best gait error, 0.676, inside 0.658 to 0.688. Changing the random seed moves
+the front further than adding the constraint does.
+
+Two caveats, because the hypervolume margin is not large. 0.0020 against 0.0024 is
+close, and three campaigns is a small sample from which to estimate a spread — this
+establishes that the gap is *of the same order* as the noise, not that it is
+provably zero. The best-gait comparison is more comfortable at 0.0180 against
+0.0297. What would be indefensible is the version of this sentence that shipped
+before: asserting "that is just noise" without ever measuring the noise.
+
+### 7.2 The paper's mean-force shortcut changes the answer, not only the magnitude
+
+This one came back against the write-up, so the write-up changed.
+
+§3 established that computing wear from the cycle-mean force overestimates it by
+51.3%. §3 then claimed the bias "partly cancels between designs, so the paper's
+ratio-based conclusions survive". That was reasoning, not measurement. The test is
+direct: re-run the same campaign with the second objective switched from the
+paper's mean-force wear to the integrated form.
+
+| Objective | Front | Hypervolume | Best gait | Best wear | Dominating Jansen |
+|---|---|---|---|---|---|
+| Mean-force wear (the paper's) | 20 | 0.0684 | 0.658 | 0.758 | 20 of 20 |
+| Integrated wear | 23 | 0.0731 | 0.710 | 0.729 | 20 of 23 |
+
+**The front moves, and it moves by more than the noise.** Say that on the axis
+where the comparison is exact.
+
+The wear axis is *not* exact between these two rows, and it is worth being precise
+about why. 0.758 is a 24% reduction in *mean-force* wear; 0.729 is a 27% reduction
+in *integrated* wear. Each campaign normalises against a Jansen measured its own
+way, so each legitimately sits at (1, 1) — but the two numbers reduce different
+quantities, and hypervolume, which mixes both axes, inherits that ambiguity.
+
+**The gait axis has no such problem.** Stance flatness and velocity ripple are
+computed identically in both campaigns; only the second objective changed. So the
+best achievable gait error moving from **0.658 to 0.710** is a like-for-like
+comparison, and that change of 0.052 is **1.8 times the 0.0297 seed-to-seed spread**
+measured in §7.1. Changing which wear number you minimise moves the reachable gait
+quality further than changing the random seed does. That is the finding, and it
+rests on the clean axis alone.
+
+What survives and what does not:
+
+- **The paper's central claim survives.** Jansen is Pareto-dominated under either
+  wear definition — 20 designs dominate it on the mean-force front, 20 on the
+  integrated front. Nothing about the headline result depends on the shortcut.
+- **"The bias partly cancels" does not survive.** It does not cancel enough to
+  leave the optimum where it was. The shortcut systematically mis-weights which
+  joints matter — it over-charges the pins that slide far while lightly loaded —
+  so a search run against it prefers a measurably different set of designs.
+
+That is the second substantive finding about the paper's shortcut, and it is the
+more interesting one. The first says its absolute numbers are high by half. This
+one says its *optimum* is in the wrong place, which is a claim about the method
+rather than about the arithmetic.
+
+### 7.3 The constraint is free at 40° and expensive by 45°
+
+"The constraint turned out to be non-binding" is a weak sentence. Sweeping the
+threshold turns it into a design rule.
+
+![threshold sweep](../figures/threshold_sweep.png)
+
+| Minimum loaded angle enforced | Front | Hypervolume | Best gait | Best wear | Hypervolume lost |
+|---|---|---|---|---|---|
+| none | 20 | 0.0684 | 0.658 | 0.758 | — |
+| 40° | 19 | 0.0664 | 0.676 | 0.759 | 2.9% |
+| 45° | 18 | 0.0608 | 0.719 | 0.767 | 11.1% |
+| 50° | 8 | 0.0595 | 0.727 | 0.779 | 13.0% |
+| 55° | 9 | 0.0000 | 2.343 | 0.887 | 100% |
+
+**The constraint is free at 40° and has a real price by 45°.** The 2.9% lost at
+40° is smaller than the 3.5% the seed alone moves it (§7.1), so it is not a cost
+at all. The 11.1% lost at 45° is more than three times that spread, so it is.
+
+At **55° the constraint stops being a constraint and becomes a wall.** Nine designs
+still satisfy it, but not one of them beats Jansen on both objectives — the best
+gait error on that front is 2.343, more than twice Jansen's. Enforce 55° and the
+answer to "can you beat Jansen?" becomes no.
+
+The shape is worth more than any single row. Hypervolume falls monotonically as the
+threshold tightens, which is what it must do — a tighter constraint can only shrink
+the feasible set — but it falls *slowly* to 50° and then off a cliff. The knee sits
+just past Jansen's own 42.7°, which is the satisfying part: **Jansen's linkage sits
+almost exactly at the point where this constraint begins to cost something.** A few
+degrees of margin more and it would be paying for the privilege.
+
+As a design guideline, in one line: *enforce 40° for free; expect to give up
+roughly a tenth of the achievable improvement to reach 45°; do not ask for 55° on
+this mechanism.*
+
+### 7.4 The conclusions survive the definition underneath them; the magnitudes do not
+
+Everything in this repo rests on one definitional choice: stance is the arc of the
+crank turn within **1% of path height** of the lowest point. §1 and
+[`METRIC_DEFINITIONS.md`](METRIC_DEFINITIONS.md) show how the *baseline metrics*
+move with that band. Neither shows whether the *optimization conclusions* do. So
+the campaign is re-run at half and double the band.
+
+| Stance band | Front | Dominating Jansen | Hypervolume | Best gait | Best wear |
+|---|---|---|---|---|---|
+| 0.5% | 7 | **7 of 7** | 0.0815 | 0.570 | 0.789 |
+| **1.0%** (ours) | 20 | **20 of 20** | 0.0684 | 0.658 | 0.758 |
+| 2.0% | 15 | **15 of 15** | 0.0618 | 0.725 | 0.741 |
+
+**The paper's central claim is robust to the definition. Its magnitude is not.**
+
+Jansen is Pareto-dominated at every band, and not marginally — every single design
+on every front beats it on both objectives. A four-fold change in the definition of
+stance does not touch the qualitative result, which is the reassuring half of this
+study and the reason the reproduction in §6 can be trusted at all.
+
+The numbers you would quote, however, move a great deal, and they move in opposite
+directions:
+
+| Band | "Gait error improved by" | "Wear reduced by" |
+|---|---|---|
+| 0.5% | 43.0% | 21.1% |
+| 1.0% | 34.2% | 24.2% |
+| 2.0% | 27.5% | 25.9% |
+
+There is a mechanism behind the direction of each. A **narrower** band counts only
+the very bottom of the stroke as stance, which is the flattest part of an already
+flat curve — there is more headroom to flatten it further, so the gait improvement
+looks larger. It also means the foot carries the 20 N ground reaction over less of
+the turn, so there is less load-driven wear available to remove, and the wear
+improvement looks smaller. Widening the band reverses both. Neither is an artefact;
+each is the correct answer to a slightly different question about what "on the
+ground" means.
+
+**This is why the definitions are published.** A paper that reports "28% better
+stance flatness" without writing down its stance rule has reported a number that
+another implementation cannot check, and §1 is the demonstration that Wang's five
+numbers cannot all come from one rule. The lesson generalises past this paper: on
+this mechanism the stance threshold is not a detail of post-processing, it is a
+modelling choice that moves the headline by a third.
+
+**One thing the band does not explain.** The paper claims a 56% wear reduction; we
+find 24% at our band. Across a four-fold change in the stance definition our figure
+only moves between **21% and 26%** — it never approaches 56%, and it moves the wrong
+way for a wider band to rescue it. So the wear-magnitude disagreement in §6 is
+**not** a definitional artefact, and the hypothesis that it might have been is now
+closed. That strengthens §6 rather than weakening it.
+
+> **A note on this study, because it was wrong once.** The first run of it was
+> meaningless and the mistake is instructive. `optimize.describe` passed the band
+> to the gait metrics and to the transmission angles, but not to
+> `dynamics.solve_statics` — which uses it to decide which crank samples carry the
+> ground reaction, and therefore sets every pin force and all of the wear. So each
+> design was scored with its gait measured under the new stance definition and its
+> wear under the old one, and the resulting front was a chimera. Nothing published
+> was affected, because every other campaign in this repo runs at the 1% default
+> that the solver was already assuming; only this study moved the band, so only
+> this study was wrong. It is fixed, the study was re-run from scratch, and
+> `test_the_stance_band_reaches_the_statics_as_well_as_the_metrics` now fails if
+> the band is ever dropped on that path again. The general lesson is the one worth
+> keeping: a parameter that is threaded through one code path and silently
+> defaulted on another produces plausible numbers, not a crash.
+
+

@@ -90,8 +90,12 @@ slowest. The evidence that both calculations are right, and the shortcut is what
 the crank pin they agree to **0.0%**, which is the one joint where they must agree
 analytically, because the crank turns at a constant rate.
 
-This does not overturn the paper's conclusions, which are stated as ratios. It does mean its
-absolute wear figures are high by about half.
+This does not overturn the paper's central claim — Jansen is Pareto-dominated under either
+wear definition. It does mean its absolute wear figures are high by about half, and it means
+something sharper: re-running the whole optimization against the integrated form moves the
+Pareto front by more than the search's own run-to-run noise. The shortcut does not just
+mis-state the size of the wear, it moves where the optimum is. Numbers in
+[`docs/RESULTS.md`](docs/RESULTS.md) §7.2.
 
 ![wear breakdown](figures/wear_breakdown.png)
 

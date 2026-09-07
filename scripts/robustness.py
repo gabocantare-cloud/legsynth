@@ -292,6 +292,20 @@ def main():
     os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
     name = "robustness_quick.json" if args.quick else "robustness.json"
     dest = os.path.join(ROOT, "results", name)
+
+    # Merge rather than overwrite. `--study band` re-runs one study, and a plain
+    # write would silently drop the three that cost 40 minutes to produce. Only
+    # the studies actually run this time are replaced; `--study all` replaces
+    # every one of them anyway.
+    if os.path.exists(dest):
+        try:
+            with open(dest) as fh:
+                merged = json.load(fh)
+        except (ValueError, OSError):
+            merged = {}
+        merged.update(out)
+        out = merged
+
     with open(dest, "w") as fh:
         json.dump(out, fh, indent=2, default=float)
     print(f"\nwrote {os.path.relpath(dest, ROOT)} "

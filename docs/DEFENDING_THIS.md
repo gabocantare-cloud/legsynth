@@ -82,10 +82,19 @@ averaging first is exact there. A bug in either calculation would almost certain
 shown up at that joint too. Both are right — the shortcut is what is wrong. The result is
 also converged: going from 360 to 5760 crank samples moves it by 0.1%.
 
-**What it does and does not overturn.** It does not overturn the paper's conclusions, which
-are stated as ratios between designs, and a bias that applies to every design largely cancels
-in a ratio. We measured that rather than assuming it — see §7 of `RESULTS.md`. It does mean
-the paper's *absolute* wear figures are high by about half.
+**What it does and does not overturn.** The obvious defence of the paper is that its
+conclusions are ratios between designs, and a bias applying to every design cancels in a
+ratio. We measured that instead of assuming it, and **the defence only half works.** Jansen is
+Pareto-dominated under either wear definition, so the central claim is untouched. But
+re-running the optimization against the integrated form moves the best achievable gait error
+from 0.658 to 0.710 - 1.8 times the search's own seed-to-seed spread. (Quote the gait axis,
+not the wear axis: gait is computed identically in both campaigns, whereas the two wear
+numbers reduce two different definitions of wear and are not directly comparable.) The
+shortcut does not merely inflate the wear figures by half, it moves the optimum. §7.2 of
+`RESULTS.md`.
+
+That is worth having ready, because "doesn't it all cancel in the ratio?" is the first thing a
+sharp reader will say, and the answer is a measured "mostly, but not enough".
 
 **The pretty corollary.** The three pins that turn a full revolution take 49% of the total
 wear between them, and it is not because they carry the most load — `O` carries 4.03 N mean

@@ -216,6 +216,31 @@ def test_the_stance_band_reaches_the_objective(baseline):
     assert wide["step_length"] > narrow["step_length"]
 
 
+def test_the_stance_band_reaches_the_statics_as_well_as_the_metrics():
+    """The band decides which samples carry the ground reaction, so it changes
+    every pin force and therefore all of the wear.
+
+    This was wrong once. `describe` passed `band` to the gait metrics and to the
+    transmission angles but not to `solve_statics`, so a campaign run at a
+    different stance band scored each design's *gait* under the new definition
+    and its *wear* under the old one. Nothing published moved - everything else
+    runs at the 1% default, which is what the solver was already assuming - but
+    the stance-band robustness study was measuring a chimera.
+
+    A wider band means the foot is judged to be on the ground for more of the
+    turn, so it carries the 20 N reaction for longer, so the pins see more load
+    and the linkage wears more. If wear stops responding to the band, the band
+    has been dropped somewhere between `evaluate` and `dynamics`.
+    """
+    x = JANSEN.copy()
+    wear = [O.describe(O.leg_from_vector(x), n=360, band=b)["wear"]
+            for b in (0.005, 0.01, 0.02)]
+    assert wear[0] < wear[1] < wear[2], (
+        "wear must rise with the band; it did not, so band is being dropped")
+    assert wear[2] / wear[0] > 1.15, (
+        "and the effect should be sizeable, not rounding")
+
+
 def test_jansen_is_still_the_anchor_under_the_integrated_wear_objective():
     """Swapping which wear number the objective minimises must not move Jansen.
 

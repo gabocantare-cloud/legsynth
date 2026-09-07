@@ -95,7 +95,12 @@ def describe(leg, n=N_EVAL, band=M.DEFAULT_BAND):
                    force_amplification=float("nan"), branch_margin=0.0,
                    assembles=False)
         return out
-    sol = D.solve_statics(leg, n=n)
+    # The band has to reach the statics too, not just the gait metrics. It sets
+    # which samples carry the ground reaction, so it changes every pin force and
+    # therefore all of the wear. Leaving it at the default here while the metrics
+    # moved would score a design's gait under one definition of stance and its
+    # wear under another.
+    sol = D.solve_statics(leg, n=n, band=band)
     w = W.wear_per_cycle(sol)
     ta = C.transmission_angles(leg, n=n, band=band)
     forces = sol["forces"]
