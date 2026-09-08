@@ -1,6 +1,6 @@
 """Regenerate every published number and figure, in order. One command.
 
-The four scripts below are the whole repo. They have to run in this order
+The five scripts below are the whole repo. They have to run in this order
 because each one leaves a file the next one reads:
 
   1. gait_report.py       the Jansen baseline and the stance-band sensitivity
@@ -10,7 +10,11 @@ because each one leaves a file the next one reads:
   3. run_optimization.py  both Pareto fronts, and the CAD export of the
                           balanced design
                           -> results/pareto.json, results/cad/*
-  4. make_figures.py      every figure in the README, several of which read
+  4. feasibility.py       how much of the paper's design box assembles and how
+                          much of it is feasible, at three seeds - the numbers
+                          behind docs/RESULTS.md section 5
+                          -> results/feasibility.json
+  5. make_figures.py      every figure in the README, several of which read
                           results/pareto.json, so this must come last
                           -> figures/*.png, figures/optimized_leg.gif
 
@@ -28,7 +32,7 @@ Pass --with-studies to include them.
 
 Run:
 
-    python scripts/reproduce.py                  # the four, ~10 min
+    python scripts/reproduce.py                  # the five, ~11 min
     python scripts/reproduce.py --quick          # smoke test, ~2 min
     python scripts/reproduce.py --with-studies   # everything, ~1 h
 
@@ -49,6 +53,7 @@ STAGES = [
     ("gait_report.py", []),
     ("mechanics_report.py", []),
     ("run_optimization.py", ["--quick"]),
+    ("feasibility.py", ["--quick"]),
     ("make_figures.py", []),
 ]
 

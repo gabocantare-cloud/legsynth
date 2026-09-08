@@ -1,0 +1,99 @@
+{
+  "n": 600,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "jitter": 0.02,
+  "n_eval": 360,
+  "uniform": {
+    "label": "uniform",
+    "n": 600,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "draws": [
+      {
+        "seed": 0,
+        "n": 600,
+        "assemble": 103,
+        "feasible": 0,
+        "assemble_rate": 0.17166666666666666,
+        "feasible_rate": 0.0,
+        "seconds": 2.964694899972528
+      },
+      {
+        "seed": 1,
+        "n": 600,
+        "assemble": 122,
+        "feasible": 1,
+        "assemble_rate": 0.20333333333333334,
+        "feasible_rate": 0.0016666666666666668,
+        "seconds": 3.421627499628812
+      },
+      {
+        "seed": 2,
+        "n": 600,
+        "assemble": 88,
+        "feasible": 0,
+        "assemble_rate": 0.14666666666666667,
+        "feasible_rate": 0.0,
+        "seconds": 2.5431140000000596
+      }
+    ],
+    "assemble_rate_min": 0.14666666666666667,
+    "assemble_rate_max": 0.20333333333333334,
+    "feasible_min": 0,
+    "feasible_max": 1,
+    "feasible_rate_min": 0.0,
+    "feasible_rate_max": 0.0016666666666666668
+  },
+  "jitter_study": {
+    "label": "2% jitter",
+    "n": 600,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "draws": [
+      {
+        "seed": 0,
+        "n": 600,
+        "assemble": 434,
+        "feasible": 17,
+        "assemble_rate": 0.7233333333333334,
+        "feasible_rate": 0.028333333333333332,
+        "seconds": 11.725982300005853
+      },
+      {
+        "seed": 1,
+        "n": 600,
+        "assemble": 439,
+        "feasible": 35,
+        "assemble_rate": 0.7316666666666667,
+        "feasible_rate": 0.058333333333333334,
+        "seconds": 11.979945099912584
+      },
+      {
+        "seed": 2,
+        "n": 600,
+        "assemble": 440,
+        "feasible": 24,
+        "assemble_rate": 0.7333333333333333,
+        "feasible_rate": 0.04,
+        "seconds": 11.879235599655658
+      }
+    ],
+    "assemble_rate_min": 0.7233333333333334,
+    "assemble_rate_max": 0.7333333333333333,
+    "feasible_min": 17,
+    "feasible_max": 35,
+    "feasible_rate_min": 0.028333333333333332,
+    "feasible_rate_max": 0.058333333333333334
+  },
+  "runtime_s": 44.514890199992806
+}
