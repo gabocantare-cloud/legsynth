@@ -1,12 +1,11 @@
 # Handoff — what to do next
 
-Written at the end of the session that worked through the previous handoff: git history,
-the sample-count unification, the parallel optimizer, the four robustness studies, and the
-clearance fit.
+Written after the build session, then updated by the audit session and again by the fix
+session that worked `docs/audit/FIX_PLAN.md`.
 
-**State on arrival: 91 tests passing, `ruff` clean, seven commits on `main`, nothing
-uncommitted, every documented number regenerated from code that ran in this repo.** The
-prioritised list below is short, because the previous one is done.
+**State on arrival: 91 tests passing, `ruff` clean, `scripts/verify_docs.py --slow` green at
+40 claims, nothing from the audit left unfixed, nothing pushed.** The prioritised list below
+is short, because the previous one is done.
 
 **Read `## Ground rules` at the bottom before changing anything.** Several decisions in this
 repo look wrong until you know why they were made, and two of the bugs found last session
@@ -14,21 +13,32 @@ were introduced by exactly that kind of well-meaning fix.
 
 ---
 
-## Read this first: an audit comes before the push
+## Read this first: the audit is done and its fixes are in
 
-Gabriel has decided the repo gets an independent audit before it goes public, and he drives
-that with a pasted prompt rather than from this file. If he has handed you an audit brief,
-**follow it and ignore the P0 below** — the push is deliberately blocked until the audit and
-its fixes are done.
+**The push is now the top of the list.** The three-session chain is finished:
 
-The chain is three sessions:
+1. ~~**build the inspector and audit**~~ — **done.** `.claude/skills/audit-*` (six
+   inspectors), `scripts/verify_docs.py` (published numbers pinned to the sentences that
+   quote them), and `docs/audit/FINDINGS.md`. The audit also ran 20 optimization campaigns
+   to settle a contested claim; they are in `results/audit/` and they ship with the repo.
+2. ~~**fix**~~ — **done.** Every finding in [`FINDINGS.md`](audit/FINDINGS.md) was worked
+   through [`FIX_PLAN.md`](audit/FIX_PLAN.md); nothing was left unfixed. `verify_docs.py
+   --slow` is green at 40 claims, `pytest` at 91, `ruff` clean.
+3. **publish** — the P0 below.
 
-1. **build the inspector and audit** — create `.claude/skills/` (`audit-numbers`,
-   `audit-code`, `audit-repro`, `audit-claims`, `audit-portfolio`, `audit-all`) plus
-   `scripts/verify_docs.py`, then write `docs/audit/FINDINGS.md`. Report only; fix nothing.
-2. **fix** — work through `FINDINGS.md`. Everything in it is meant to be fixed; severity
-   orders the work rather than deciding whether it happens.
-3. **publish** — then, and only then, the P0 below.
+**What the audit changed, in one paragraph, because you will otherwise defend the old
+version.** §7.2's headline — that the paper's mean-force wear shortcut moves the optimum —
+did not survive: measured at ten seed triples instead of one, the paired difference in best
+gait error is **−0.0036**, 95% CI **[−0.018, +0.011]**, four of ten positive, and the
+published +0.052 turned out to be the *maximum* of the ten. That is a null, in both
+directions: it is not evidence that the bias cancels either. The same twenty campaigns
+showed §7.1's seed-to-seed spread was understated 7× (0.0170, not 0.0024), which also took
+down §7.3's "expensive by 45°" design guideline — at the measured spread, 45° and 50° are
+inside noise, so §7.3 now claims only "free at 40°, impossible at 55°". §7.1's own verdict
+survived and is much better supported than before (a factor of 8.5, not 1.2). §5's "0 of
+600" became "0 or 1 of 600 across three draws", with `scripts/feasibility.py` behind it.
+What is untouched: Jansen is Pareto-dominated on every front measured, and the mean-force
+shortcut still overstates the absolute wear figures by 51%.
 
 The reason for the separation is worth knowing, because it is the whole point: this session's
 documentation and its `results/*.json` were produced by the *same* AI session, so an auditor
@@ -39,7 +49,7 @@ and to recommend that an overstated finding be weakened or deleted.
 
 ---
 
-## P0 — after the audit, and only you can do it
+## P0 — the push, and only you can do it
 
 1. **Push to GitHub.** The repository exists locally with seven commits and nothing
    uncommitted.
@@ -58,10 +68,10 @@ and to recommend that an overstated finding be weakened or deleted.
      `git config user.name "..."` then `git rebase -i --root` is painful — easier to fix now
      than later.
 
-3. **Watch the first CI run.** `.github/workflows/tests.yml` now has a `lint` job as well as
-   `pytest` on 3.10 and 3.12. It has never run. The tree is `ruff`-clean locally on 0.16.6;
-   if CI installs a newer ruff with new default rules, the lint job may fail on something
-   cosmetic. Pin the version in the workflow if that happens.
+3. **Watch the first CI run.** `.github/workflows/tests.yml` has a `lint` job, `pytest` on
+   3.10 and 3.12, and a step running `scripts/verify_docs.py` so the documents cannot drift
+   from the code between commits. It has never run. `ruff` is pinned to 0.16.6, the version
+   the tree is clean on, so the lint job should not fail on a cosmetic new default rule.
 
 ---
 
@@ -78,8 +88,8 @@ and to recommend that an overstated finding be weakened or deleted.
    re-running the sweep" area three days before a deadline. Make the call deliberately.
 
 5. **`figures/threshold_sweep.png` is referenced only from `RESULTS.md` §7.3.** Consider
-   putting it in the README too — the "free at 40°, expensive by 45°" curve is the single most
-   interesting plot in the repo and it is currently buried three clicks deep.
+   putting it in the README too — the "free at 40°, impossible at 55°" curve is the single
+   most interesting plot in the repo and it is currently buried three clicks deep.
 
 6. **`docs/STEPS.md` was not touched last session** and still describes the build order as if
    the seven steps were the whole project. One paragraph pointing at `robustness.py` and
@@ -89,17 +99,17 @@ and to recommend that an overstated finding be weakened or deleted.
 
 ## P2 — Real work, if there is time
 
-7. **The seed-spread estimate in §7.1 is three campaigns.** That is enough to say the
-   constrained-vs-unconstrained gap is *of the same order* as the noise, which is what the
-   text claims, and not enough to put an interval on it. The hypervolume margin is narrow —
-   0.0020 against a 0.0024 spread. Six seed triples instead of three would either firm it up
-   or expose it, and it is one line in `robustness.py` (`SEED_TRIPLES`) plus about 15 minutes
-   of compute per extra triple. This is the weakest quantitative claim left in the repo.
+7. ~~**The seed-spread estimate in §7.1 is three campaigns.**~~ **Done by the audit.** It is
+   now measured at ten seed triples (hypervolume spread 0.0170, best gait 0.0810), from the
+   twenty campaigns in `results/audit/objective_replication.json`. §7.1's verdict survived and
+   got stronger: the gap is 0.0020 against 0.0170, a factor of 8.5.
 
-8. **Find the knee in §7.3 properly.** The threshold sweep jumps 40 → 45 → 50 → 55, and the
-   interesting behaviour is all between 40 and 45: free at one end, 11% at the other. Sampling
-   41, 42, 43, 44 would locate the knee to a degree and let the write-up say "free up to 43°"
-   instead of "free at 40°, expensive by 45°". Four more campaigns, about an hour.
+8. **Find the knee in §7.3 properly, and this is now the biggest open question in §7.** The
+   threshold sweep is one campaign per threshold, and at the measured seed spread (24.9% of
+   the hypervolume baseline) everything between 40° and 50° is inside noise. Only "free at
+   40°" and "impossible at 55°" are resolved. Repeating the sweep at **ten seed triples per
+   threshold** — about 2 hours — would locate the knee instead of stating that this data
+   cannot; sampling 41–44° on top of that would put it to a degree.
 
 9. **The ground-clearance investigation has an answer now — decide what to do with it.**
    `scripts/clearance_fit.py` and `results/clearance_fit.json` hold it, written up in
@@ -178,8 +188,9 @@ Every one of these looks like a bug until you know the reason. All are load-bear
 - **The virtual-work residual is the test that matters in `dynamics.py`.** It is an independent
   check the solver does not enforce. If you touch that module and the residual rises above
   ~1e-4 at n=1440, something is wrong regardless of what the other tests say.
-- **The search is seeded from Jansen on purpose.** 0 of 600 uniform designs satisfy the paper's
-  own constraints. Do not "fix" this by switching to uniform sampling.
+- **The search is seeded from Jansen on purpose.** At most 1 of 600 uniform designs satisfies
+  the paper's own constraints, across three draws (`scripts/feasibility.py`). Do not "fix" this
+  by switching to uniform sampling, and quote the range rather than one draw's "0 of 600".
 - **`--quick` writes to `*_quick.json`.** It used to overwrite the real results; do not merge
   those paths back together. `robustness.py` also *merges* into `robustness.json` rather than
   overwriting, so `--study band` cannot destroy the other three studies.
@@ -187,9 +198,12 @@ Every one of these looks like a bug until you know the reason. All are load-bear
   and §7.1 now measures that the residual gap is search noise. Do not let it get quietly
   upgraded into a claimed benefit — the honest null, plus the threshold curve in §7.3 and the
   loaded/unloaded distinction in §4, is a stronger story than an overstated win.
-- **Do not restore "the wear bias cancels in the ratio".** §7.2 measured it. Jansen stays
-  dominated under either wear definition, so the paper's central claim survives — but the
-  optimum moves by 1.8× the seed-to-seed spread. The defence only half works, and the docs
-  now say so in four places.
+- **Do not re-assert either direction on "the wear bias cancels in the ratio".** The
+  objective-swap comparison was measured at ten seed triples and came back null: paired
+  difference −0.0036 in best gait error, 95% CI [−0.018, +0.011]. Do not re-assert movement of
+  the optimum without new evidence — and do not upgrade the null into "it cancels" either, as
+  the interval still admits ±0.018. Jansen stays dominated under either wear definition, so
+  the paper's central claim survives, and the 51% overstatement of the absolute wear figures
+  is a separate measurement that stands.
 - **Do not hardcode the test count in prose.** It went stale in three documents at once. The
   README quotes it beside the `pytest` line; nowhere else should.

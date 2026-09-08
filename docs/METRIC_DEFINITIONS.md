@@ -59,7 +59,7 @@ means the crank rate cancels out of every ratio, so no motor speed has to be ass
 | Metric | Formula | What it means physically |
 |---|---|---|
 | **Step length** | `max(x_S) - min(x_S)` | How far the body is pushed forward in one crank turn, assuming no slip |
-| **Ground clearance** | `max(y) - y_ground` | The tallest obstacle the leg can swing over without stubbing |
+| **Ground clearance** | `max(y) - y_ground`, which is exactly `(1 - band) x H` — see below | The tallest obstacle the leg can swing over without stubbing |
 | **Duty factor** | `(crank angle in stance) / 2π`, i.e. `count(S) / n` | Fraction of the turn with the foot planted. At duty `d` a machine needs at least `1/d` phase-shifted legs to always have a foot down |
 | **Stance flatness** | `std(y_S) / step_length` | RMS wobble of the foot while planted, made dimensionless. Multiply by step length and you get, in mm, how much the body bobs per step. Lower is better |
 | **Velocity ripple** | `std(|v|_S) / mean(|v|_S)` | Coefficient of variation of foot speed over the ground stroke. The planted foot is the body's only link to the ground, so an uneven one makes the machine surge and drag at constant crank speed. Lower is better |
@@ -67,6 +67,21 @@ means the crank rate cancels out of every ratio, so no motor speed has to be ass
 Duty factor being a plain sample count is only valid because the path is sampled uniformly in
 crank angle — which is what `JansenLeg.foot_path` returns, and what `metrics.py` documents as a
 precondition.
+
+**Ground clearance is an identity, not a fifth independent observation.** With the ground line
+at `min(y) + band × H`, where `H = max(y) − min(y)` is the path height:
+
+    clearance = max(y) − y_ground = H − band × H = (1 − band) × H
+
+So at our 1% band the clearance is exactly 99% of the path height — 22.232376 against
+22.456946, a ratio of 0.9900000000 — and it scales linearly and exactly with the band rather
+than being merely "bounded above" by the path height. Three consequences worth carrying:
+a statement about clearance is a statement about path height; the 0.85× clearance constraint
+in the optimization is a 0.85× path-height constraint; and the argument below, that 25.7 mm
+of clearance cannot come from a 22.46 mm path, is exact rather than a bound. The identity is
+pinned to 1e-9 by claim `A1` in `scripts/verify_docs.py`. Passing `tol` (a fixed tolerance in
+millimetres) instead of `band` breaks it, because a fixed tolerance does not scale with the
+path.
 
 ---
 
@@ -137,9 +152,10 @@ revolution and is no longer a ground stroke in any physical sense.
 
 Two further observations, offered as evidence rather than accusation:
 
-- **Ground clearance cannot be a definition problem at all.** Clearance is bounded above by
-  the total path height, and this path is 22.46 mm tall. No stance rule, no tolerance and no
-  reasonable formula can extract 25.7 mm of clearance from it. The obvious remaining
+- **Ground clearance cannot be a definition problem at all.** Clearance is `(1 − band) × H`
+  exactly, and this path is `H = 22.46 mm` tall, so clearance is *at most* 22.46 mm and is
+  22.23 mm at our band. No stance rule and no choice of band can extract 25.7 mm from it;
+  only a taller path can. The obvious remaining
   explanation — that the paper measured a linkage with slightly different link lengths — was
   chased separately and **refuted**: see §8 of [`RESULTS.md`](RESULTS.md). Briefly, a
   perturbation below the holy numbers' own 0.1 mm precision does land the clearance at

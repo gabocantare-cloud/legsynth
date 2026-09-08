@@ -14,7 +14,7 @@ to explain when it's done.
 > Set up this project. Create a virtual environment, install it with `pip install -e .`,
 > run `pytest`, then run `python scripts/show_leg.py`. Tell me what each test checks.
 
-**Done when:** 5 tests pass and `figures/jansen_leg.gif` shows the leg walking.
+**Done when:** the suite passes and `figures/jansen_leg.gif` shows the leg walking.
 
 **You can explain:** The leg is eleven rigid bars driven by one crank. Each joint is found by
 intersecting two circles, in a chain. A test proves no bar ever changes length, so the
@@ -169,3 +169,42 @@ assembly drawing, individual cuttable link profiles with pin holes, and a coordi
 **Done when:** a stranger can clone it, run three commands, and get your figures.
 
 **You can explain:** all of it. That was the point.
+
+---
+
+## Step 8 — Measure the sentences you asserted (`robustness.py`, `clearance_fit.py`)
+
+**Add:** the two studies that turn the write-up's remaining assertions into measurements.
+Roughly a third of the repo's evidence is here, and it is the third a reviewer will push on,
+because it is where the write-up was wrong before.
+
+**Ask Claude Code (first):**
+> Create `scripts/robustness.py`. Four studies against the claims in the write-up that have
+> no number behind them: re-run the unconstrained campaign at several seed triples and
+> measure how far the front moves on its own; swap the second objective from the paper's
+> mean-force wear to the integrated form and compare the *paired* difference across every
+> triple; sweep the transmission-angle threshold to find where the constraint starts costing
+> something; and re-run at stance bands of 0.5% and 2%. Merge into `results/robustness.json`
+> rather than overwriting it.
+
+**Ask Claude Code (then):**
+> Create `scripts/clearance_fit.py`. The paper reports 25.7 mm of ground clearance and our
+> Jansen gives 22.23 mm from a foot path only 22.46 mm tall. Ask whether any set of link
+> lengths gives both the paper's clearance *and* its step length, first near Jansen and then
+> across the whole ±30% box, and report what each candidate costs on the numbers we do
+> reproduce.
+
+**Done — `scripts/robustness.py` and `scripts/clearance_fit.py`.** Written up in §7 and §8 of
+[`RESULTS.md`](RESULTS.md). Neither runs by default: `python scripts/reproduce.py
+--with-studies` includes them, and together they are about an hour.
+
+**The lesson, which is the reason this step exists.** Two of the four robustness studies came
+back confirming the sentence they were testing. One came back *against* it — and then, when it
+was re-run at ten seed triples instead of one, came back against the correction as well. A
+single campaign compared against a spread estimated from three campaigns is not a measurement;
+the range of a small sample understates the spread by construction, and every comparison made
+against it leans toward "the difference is real". Run the thing enough times to see its own
+noise before you quote a difference.
+
+**You can explain:** which of your claims are measured, which are asserted, and what the
+search's own run-to-run noise is. That is the difference between a result and a story.

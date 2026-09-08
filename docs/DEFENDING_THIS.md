@@ -23,7 +23,8 @@ same time — reproduces cleanly, and survives a four-fold change in the one def
 everything rests on. Three of its supporting numbers do not reproduce, and its baseline row
 turns out to be unreachable by any single consistent model — from the stance side and from the
 geometry side independently. One of its methodological shortcuts costs about fifteen times
-what it claims, and worse, moves where the optimum sits. We also added the check the paper
+what it claims in the absolute wear figures, though at ten seed triples it does not detectably
+move where the optimum sits. We also added the check the paper
 never makes: a linkage that binds on itself is a wear problem, and nobody tested for it. That
 check came back negative at the standard threshold, which we report as a negative — and then
 swept the threshold to find where it stops being free.
@@ -88,21 +89,27 @@ also converged: going from 360 to 5760 crank samples moves it by 0.1%.
 
 **What it does and does not overturn.** The obvious defence of the paper is that its
 conclusions are ratios between designs, and a bias applying to every design cancels in a
-ratio. We measured that instead of assuming it, and **the defence only half works.** Jansen is
-Pareto-dominated under either wear definition, so the central claim is untouched. But
-re-running the optimization against the integrated form moves the best achievable gait error
-from 0.658 to 0.710 - 1.8 times the search's own seed-to-seed spread. (Quote the gait axis,
-not the wear axis: gait is computed identically in both campaigns, whereas the two wear
-numbers reduce two different definitions of wear and are not directly comparable.) The
-shortcut does not merely inflate the wear figures by half, it moves the optimum. §7.2 of
-`RESULTS.md`.
+ratio. We measured that instead of assuming it. Jansen is Pareto-dominated under either wear
+definition, so the central claim is untouched. And re-running the whole optimization against
+the integrated form, at **ten seed triples**, does not detectably move the reachable gait
+quality: the paired difference in best achievable gait error averages **−0.0036**, sd 0.0231,
+95% CI **[−0.018, +0.011]**, with four of ten positive. (Quote the gait axis, not the wear
+axis: gait is computed identically in both campaigns, whereas the two wear numbers reduce two
+different definitions of wear and are not directly comparable.) §7.2 of `RESULTS.md`.
+
+This is a null result, and it should be stated as one in both directions. Ten paired triples
+centred on zero remove the evidence that the shortcut *moves* the optimum; they do not prove
+the bias cancels, because the interval still admits ±0.018.
 
 That is worth having ready, because "doesn't it all cancel in the ratio?" is the first thing a
-sharp reader will say, and the answer is a measured "mostly, but not enough".
+sharp reader will say. The measured answer: *we tested it at ten seed triples and found no
+detectable effect on the reachable gait quality — what does survive is that the absolute wear
+figures are high by 51%.* An earlier version of this document answered "mostly, but not
+enough", off a single pair of campaigns that turned out to be the largest of ten.
 
 **The pretty corollary.** The three pins that turn a full revolution take 49% of the total
 wear between them, and it is not because they carry the most load — `O` carries 4.03 N mean
-against `G_bd`'s 25.8 N peak. It is because they slide the furthest. Wear is force **times**
+against `G_bd`'s 5.89 N mean. It is because they slide the furthest. Wear is force **times**
 distance, and on this mechanism distance does most of the sorting. If you were choosing where
 to put a bronze bushing, that is where.
 
@@ -197,8 +204,9 @@ reduction rather than 56%.
 
 **Mechanism.** Two things point the same way. First, our optima sit much closer to Jansen than
 the paper's do: no design on our front moves a link by more than 8.5%, where the paper reports
-changes up to 29%. Second, of 600 designs drawn uniformly from the paper's own ±30% box, 17%
-assemble at all and **none** satisfy the paper's own constraints.
+changes up to 29%. Second, of 600 designs drawn uniformly from the paper's own ±30% box,
+**14.7–20.3% assemble at all and 0 or 1 satisfies the paper's own constraints** — measured at
+three seeds, because both figures are properties of a draw rather than of the box.
 
 That second number explains the first. Stance is a band near the lowest point of the foot
 path, so a design that loses Jansen's unusually flat bottom stroke also loses most of the arc
@@ -330,8 +338,8 @@ result is the shape.
 
 **"Why is the search seeded from Jansen? Isn't that biasing the answer?"** It biases where the
 search *starts*, not what counts as good, which is still decided by the objectives and
-constraints alone. It is necessary because 0 of 600 uniformly sampled designs are feasible —
-see Finding 5. It is a documented deviation; the paper does not say how it initialised.
+constraints alone. It is necessary because at most 1 of 600 uniformly sampled designs is
+feasible, across three draws — under 0.2% either way. See Finding 5. It is a documented deviation; the paper does not say how it initialised.
 
 **"What would you do with another week?"** Add ground clearance as a third objective. Every
 design on our front trades it away — from Jansen's 22.2 mm down to about 19 mm — and stops
@@ -343,9 +351,10 @@ two-objective setup was the right call for a reproduction; the three-objective v
 next piece of actual work, and it is a paper rather than a commit.
 
 **"And with another day?"** Locate the knee in §7.3 properly. The threshold sweep goes
-40 → 45 → 50 → 55 and all the interesting behaviour is between the first two — free at one
-end, 11% of the achievable improvement at the other. Sampling every degree between them would
-turn "free at 40°, expensive by 45°" into an exact number.
+40 → 45 → 50 → 55, one campaign per row, and at the measured seed-to-seed spread
+everything between 40° and 50° is inside noise — only "free at 40°" and "impossible at 55°"
+are resolved. Repeating the sweep at ten seed triples per threshold, and sampling 41–44°,
+would say where the price actually begins instead of stating that this data cannot.
 
 **"What is the weakest part of this repo?"** The wear model is Archard with a single unknown
 coefficient and a quasi-static force solve — no lubrication regime, no surface finish, no

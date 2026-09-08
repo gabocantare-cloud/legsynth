@@ -3,7 +3,7 @@
 Everything on this page came out of code in this repo. Regenerate with:
 
 ```
-python scripts/reproduce.py          # all four stages below, in order
+python scripts/reproduce.py          # all five stages below, in order
 ```
 
 or one stage at a time:
@@ -12,6 +12,7 @@ or one stage at a time:
 python scripts/gait_report.py        # gait metrics + stance-band sensitivity
 python scripts/mechanics_report.py   # pin forces, wear, transmission angles
 python scripts/run_optimization.py   # both Pareto fronts (~10 min, all cores)
+python scripts/feasibility.py        # §5's assembly and feasibility rates (~1 min)
 python scripts/make_figures.py       # every figure below
 python scripts/robustness.py         # the studies behind §7 (~50 min)
 ```
@@ -124,11 +125,14 @@ ratio: Jansen is Pareto-dominated under either wear definition. It does mean the
 absolute wear numbers are high by about half.
 
 It used to say, here, that the bias "partly cancels between designs, so the
-ratio-based conclusions survive". That was reasoning rather than measurement, and
-when it was finally measured it turned out to be wrong — re-running the campaign
-against the integrated wear form moves the front by more than the search's own
-run-to-run noise. The shortcut misplaces the *optimum*, not just the magnitude.
-See §7.2.
+ratio-based conclusions survive". That was reasoning rather than measurement. It has
+since been measured, at ten seed triples rather than the one pair this paragraph was
+first rewritten from: switching the campaign to the integrated wear form moves the
+best achievable gait error by −0.0036 on average, 95% CI [−0.018, +0.011], with four
+of ten triples positive. There is no detectable effect on where the optimum sits —
+which is not the same as showing the bias cancels, only that this experiment cannot
+see it move. What does stand is the magnitude: the absolute wear numbers are high by
+about half. See §7.2.
 
 ---
 
@@ -180,14 +184,28 @@ layer is really there to catch.
 Not a headline result, but it changes how the optimization has to be run, so it
 is reported rather than buried in a commit message.
 
+Both numbers below are properties of a random draw, so they are quoted as a
+range across three independent draws (seeds 0, 1, 2) rather than as a single
+figure. `scripts/feasibility.py` produces them; `results/feasibility.json` holds
+the counts.
+
 Of 600 designs drawn uniformly from the paper's own ±30% box:
 
-- 103 (17%) assemble through a full revolution at all
-- **0** satisfy the paper's constraints (step length, clearance and duty factor
-  each ≥ 0.85 × Jansen)
+| Draw | Assemble through a full revolution | Satisfy the paper's constraints |
+|---|---|---|
+| seed 0 | 103 (17.2%) | **0** |
+| seed 1 | 122 (20.3%) | **1** |
+| seed 2 | 88 (14.7%) | **0** |
 
+So **14.7–20.3% assemble at all, and 0 or 1 in 600 satisfies the paper's
+constraints** (step length, clearance and duty factor each ≥ 0.85 × Jansen).
 Step length and duty factor fail in essentially every one. Even jittering
-Jansen's own lengths by 2% leaves only 4% of designs feasible.
+Jansen's own lengths by 2% leaves only **2.8–5.8%** of designs feasible across
+the same three draws.
+
+Under 0.2% feasible either way, which is what the conclusion below rests on. An
+earlier version of this section quoted one draw — "17%", "**0**", "4%" — as
+though they were properties of the box.
 
 The reason is a genuine coupling between the metric definition and the
 constraint. Stance is a band near the lowest point of the foot path, so a design
@@ -207,8 +225,11 @@ say how it initialised.
 
 NSGA-II, population 100, 80 generations, three runs merged per campaign, fronts
 re-scored at 1440 crank samples. Two campaigns: the paper's problem, then the
-same problem with our loaded-transmission-angle constraint added. 20 minutes
-total on one laptop core.
+same problem with our loaded-transmission-angle constraint added. **About 20
+minutes of CPU time in total, which is roughly 10 minutes of wall clock on 12
+cores** — the six runs are independent and `run_optimization.py` runs them in
+parallel. Where another document quotes "~10 min", that is the wall-clock
+figure; this is the one place both are stated.
 
 ![Pareto fronts](../figures/pareto.png)
 
@@ -262,8 +283,12 @@ by giving up essentially nothing on wear (0.992) — and it is the only one of t
 three that keeps a *longer* step than Jansen. The other two buy their wear
 reduction by shortening the stride to about 38 mm, right against the 0.85× floor
 the paper's own constraints impose. Every design on the front loses ground
-clearance, from 22.2 mm to roughly 19 mm: nothing in either objective rewards
-lifting the foot higher, and only the 0.85× constraint stops it falling further.
+clearance, from 22.2 mm to roughly 19 mm — which, since clearance is exactly
+`(1 − band) × path height` (see
+[`METRIC_DEFINITIONS.md`](METRIC_DEFINITIONS.md)), is really the *path height*
+shrinking: nothing in either objective rewards lifting the foot higher, and only
+the 0.85× constraint — a 0.85× path-height constraint — stops it falling
+further.
 That is a fair criticism of the paper's objective set, and it is ours too, since
 we reproduced it deliberately.
 
@@ -318,8 +343,9 @@ would have been an artefact.
 Every claim in §6 above was once a sentence someone had reasoned their way to
 rather than measured. Four of them were load-bearing enough to be worth the
 compute, and `scripts/robustness.py` measures each one. Two came back confirming
-the sentence. One came back changing it. One came back with a curve where there
-had been a shrug.
+the sentence. One came back null once its single pair of campaigns was repeated at
+ten. One came back with a curve whose two ends are decisive and whose middle this
+data cannot resolve.
 
 **How two fronts are compared.** Comparing two sets of points needs one number,
 and the honest one here is **hypervolume**: the area of the rectangle below-left
@@ -334,8 +360,10 @@ to win — hypervolume is the fraction of it won. It rewards a front for being b
 §6 says the difference between the constrained and unconstrained fronts is
 run-to-run variation rather than a price paid for the constraint. That is the
 load-bearing sentence of the whole negative result, and it had never been
-measured. Measuring it is simple: run the *unconstrained* campaign three times
-with different random seeds and see how far the front moves on its own.
+measured. Measuring it is simple: run the *unconstrained* campaign with different
+random seeds and see how far the front moves on its own. Three campaigns were run
+first, and are tabulated below; the spread they gave turned out to be badly
+understated, so it was re-measured at ten.
 
 | Campaign | Seeds | Front | Hypervolume | Best gait | Best wear |
 |---|---|---|---|---|---|
@@ -346,73 +374,107 @@ with different random seeds and see how far the front moves on its own.
 
 | | Seed-to-seed spread | Constrained-vs-unconstrained gap |
 |---|---|---|
-| Hypervolume | 0.0024 | 0.0020 |
-| Best gait error | 0.0297 | 0.0180 |
+| Hypervolume | 0.0170 (sd 0.0052) | 0.0020 |
+| Best gait error | 0.0810 (sd 0.0255) | 0.0180 |
 
-**The claim stands, and the cleanest way to say it is by inspection of the first
-table.** The constrained campaign's hypervolume, 0.0664, falls *inside* the range
-the three unconstrained campaigns span on their own (0.0660 to 0.0684). So does
-its best gait error, 0.676, inside 0.658 to 0.688. Changing the random seed moves
-the front further than adding the constraint does.
+The spread column is measured over **ten** unconstrained seed triples — (0, 1, 2)
+through (27, 28, 29) — not over the three campaigns tabulated above. The twenty
+campaigns behind it are in
+[`results/audit/objective_replication.json`](../results/audit/objective_replication.json).
+Three campaigns give a range that is biased low by construction, because the range of
+*n* samples grows with *n*: the three-campaign estimates this section used to quote,
+0.0024 and 0.0297, understate the ten-triple spread by 7.1x and 2.7x. Every place
+§7.2, §7.3 and §7.4 use "the seed-to-seed spread" as a yardstick, it is the
+ten-triple number.
 
-Two caveats, because the hypervolume margin is not large. 0.0020 against 0.0024 is
-close, and three campaigns is a small sample from which to estimate a spread — this
-establishes that the gap is *of the same order* as the noise, not that it is
-provably zero. The best-gait comparison is more comfortable at 0.0180 against
-0.0297. What would be indefensible is the version of this sentence that shipped
-before: asserting "that is just noise" without ever measuring the noise.
+**The claim stands, and the cleanest way to say it is by inspection.** The
+constrained campaign's hypervolume, 0.0664, falls *inside* the range the ten
+unconstrained campaigns span on their own (0.0514 to 0.0684). So does its best gait
+error, 0.676, inside 0.658 to 0.739. Changing the random seed moves the front further
+than adding the constraint does. (The three campaigns in the table above span only
+0.0660 to 0.0684 — that narrower window is the three-sample artefact, not a
+different measurement.)
 
-### 7.2 The paper's mean-force shortcut changes the answer, not only the magnitude
+The margin is not thin, and widening the sample is what showed that. The hypervolume
+gap is 0.0020 against a spread of 0.0170 — a factor of 8.5, where the three-campaign
+estimate had suggested 1.2 — and the best-gait gap is 0.0180 against 0.0810. **This
+is the best-supported claim in §7.** What would be indefensible is the version of the
+sentence that shipped before either measurement: asserting "that is just noise"
+without ever measuring the noise.
 
-This one came back against the write-up, so the write-up changed.
+### 7.2 The paper's mean-force shortcut inflates the magnitude — and, at ten seed triples, does not move the optimum
+
+This one came back against the write-up twice: first against what §3 asserted, and
+then against what this section itself concluded from a single pair of campaigns.
 
 §3 established that computing wear from the cycle-mean force overestimates it by
 51.3%. §3 then claimed the bias "partly cancels between designs, so the paper's
 ratio-based conclusions survive". That was reasoning, not measurement. The test is
-direct: re-run the same campaign with the second objective switched from the
-paper's mean-force wear to the integrated form.
+direct: re-run the same campaign with the second objective switched from the paper's
+mean-force wear to the integrated form.
 
 | Objective | Front | Hypervolume | Best gait | Best wear | Dominating Jansen |
 |---|---|---|---|---|---|
 | Mean-force wear (the paper's) | 20 | 0.0684 | 0.658 | 0.758 | 20 of 20 |
 | Integrated wear | 23 | 0.0731 | 0.710 | 0.729 | 20 of 23 |
 
-**The front moves, and it moves by more than the noise.** Say that on the axis
-where the comparison is exact.
+**Neither axis of that table can carry a conclusion by itself.** The wear axis is not
+comparable between the two rows, and it is worth being precise about why: 0.758 is a
+24% reduction in *mean-force* wear, 0.729 a 27% reduction in *integrated* wear. Each
+campaign normalises against a Jansen measured its own way, so each legitimately sits
+at (1, 1) — but the two numbers reduce different quantities, and hypervolume, which
+mixes both axes, inherits the ambiguity. That leaves best gait error as the only
+like-for-like axis, and best gait error is exactly the statistic §7's preamble
+disqualifies: one design at one corner, movable by one lucky draw. The comparison is
+at least *paired* — same seed triple, same band, same sample count, only the wear key
+changed — which is a stronger design than the preamble contemplates. It is still not
+enough at one pair.
 
-The wear axis is *not* exact between these two rows, and it is worth being precise
-about why. 0.758 is a 24% reduction in *mean-force* wear; 0.729 is a 27% reduction
-in *integrated* wear. Each campaign normalises against a Jansen measured its own
-way, so each legitimately sits at (1, 1) — but the two numbers reduce different
-quantities, and hypervolume, which mixes both axes, inherits that ambiguity.
+So the pair was repeated at **ten seed triples**, (0, 1, 2) through (27, 28, 29),
+identical settings throughout (`pop=100, gens=80`, refined at 1440, no angle
+constraint, 1% band):
 
-**The gait axis has no such problem.** Stance flatness and velocity ripple are
-computed identically in both campaigns; only the second objective changed. So the
-best achievable gait error moving from **0.658 to 0.710** is a like-for-like
-comparison, and that change of 0.052 is **1.8 times the 0.0297 seed-to-seed spread**
-measured in §7.1. Changing which wear number you minimise moves the reachable gait
-quality further than changing the random seed does. That is the finding, and it
-rests on the clean axis alone.
+| Seed triple | Best gait, mean-force | Best gait, integrated | Paired difference |
+|---|---|---|---|
+| (0, 1, 2) | 0.6580 | 0.7099 | **+0.0520** |
+| (3, 4, 5) | 0.6659 | 0.6635 | −0.0024 |
+| (6, 7, 8) | 0.6877 | 0.6977 | +0.0100 |
+| (9, 10, 11) | 0.7150 | 0.6960 | −0.0190 |
+| (12, 13, 14) | 0.7030 | 0.7050 | +0.0020 |
+| (15, 16, 17) | 0.7389 | 0.7229 | −0.0160 |
+| (18, 19, 20) | 0.6600 | 0.6640 | +0.0040 |
+| (21, 22, 23) | 0.7000 | 0.6750 | −0.0250 |
+| (24, 25, 26) | 0.7010 | 0.6790 | −0.0220 |
+| (27, 28, 29) | 0.6930 | 0.6740 | −0.0190 |
 
-What survives and what does not:
+**Mean paired difference −0.0036, sd 0.0231, 95% CI [−0.018, +0.011], four of ten
+positive.** The +0.0520 in the first row — the pair this section used to be built on,
+and the only pair that had been drawn — is the **maximum of the ten**, and the point
+estimate across all ten has the opposite sign to it. The twenty campaigns are in
+[`results/audit/objective_replication.json`](../results/audit/objective_replication.json).
 
-- **The paper's central claim survives.** Jansen is Pareto-dominated under either
-  wear definition — 20 designs dominate it on the mean-force front, 20 on the
-  integrated front. Nothing about the headline result depends on the shortcut.
-- **"The bias partly cancels" does not survive.** It does not cancel enough to
-  leave the optimum where it was. The shortcut systematically mis-weights which
-  joints matter — it over-charges the pins that slide far while lightly loaded —
-  so a search run against it prefers a measurably different set of designs.
+**The verdict.** Switching the second objective from the paper's mean-force wear to
+the integrated form does not detectably change the reachable gait quality. The
+paper's central claim survives under either definition: Jansen is Pareto-dominated on
+every front measured, now at ten triples rather than one. The first finding about the
+shortcut — that its absolute wear figures are high by 51% — is a separate measurement
+on the Jansen baseline and is untouched.
 
-That is the second substantive finding about the paper's shortcut, and it is the
-more interesting one. The first says its absolute numbers are high by half. This
-one says its *optimum* is in the wrong place, which is a claim about the method
-rather than about the arithmetic.
+**Which way this cuts.** Ten paired triples centred on zero remove the evidence
+*against* "the bias partly cancels in the ratio". They are not evidence *for* it: the
+interval still admits ±0.018, which is a quarter of the seed-to-seed spread but not
+zero. The defensible statement is "no detectable effect at ten seed triples", and
+neither direction should be re-asserted without new evidence.
 
-### 7.3 The constraint is free at 40° and expensive by 45°
+This section is also a worked example of its own preamble. The warning that best gait
+error can be moved by one lucky design at one corner was written three paragraphs
+above a conclusion that rested on exactly that, and neither half noticed the other
+until the campaign was repeated.
+
+### 7.3 The constraint is free at 40° and impossible at 55°
 
 "The constraint turned out to be non-binding" is a weak sentence. Sweeping the
-threshold turns it into a design rule.
+threshold shows where it stops being non-binding.
 
 ![threshold sweep](../figures/threshold_sweep.png)
 
@@ -424,25 +486,31 @@ threshold turns it into a design rule.
 | 50° | 8 | 0.0595 | 0.727 | 0.779 | 13.0% |
 | 55° | 9 | 0.0000 | 2.343 | 0.887 | 100% |
 
-**The constraint is free at 40° and has a real price by 45°.** The 2.9% lost at
-40° is smaller than the 3.5% the seed alone moves it (§7.1), so it is not a cost
-at all. The 11.1% lost at 45° is more than three times that spread, so it is.
+**Free at 40°, impossible at 55°, and this sweep cannot say where in between the
+price begins.** Every row is one campaign at one seed triple, and the seed alone moves
+the unconstrained hypervolume by 0.0170 (§7.1) — **24.9%** of the 0.0684 baseline.
+Against that yardstick the 2.9% lost at 40°, the 11.1% at 45° and the 13.0% at 50°
+are all inside noise. What the sweep does establish is that the price begins somewhere
+between 50° and 55°, and that Jansen's own 42.7° sits comfortably inside the free
+region.
 
-At **55° the constraint stops being a constraint and becomes a wall.** Nine designs
-still satisfy it, but not one of them beats Jansen on both objectives — the best
-gait error on that front is 2.343, more than twice Jansen's. Enforce 55° and the
-answer to "can you beat Jansen?" becomes no.
+At **55° the constraint stops being a constraint and becomes a wall**, and that row
+needs no yardstick: the entire hypervolume is gone. Nine designs still satisfy the
+constraint, but not one of them beats Jansen on both objectives — the best gait error
+on that front is 2.343, more than twice Jansen's. Enforce 55° and the answer to "can
+you beat Jansen?" becomes no.
 
-The shape is worth more than any single row. Hypervolume falls monotonically as the
-threshold tightens, which is what it must do — a tighter constraint can only shrink
-the feasible set — but it falls *slowly* to 50° and then off a cliff. The knee sits
-just past Jansen's own 42.7°, which is the satisfying part: **Jansen's linkage sits
-almost exactly at the point where this constraint begins to cost something.** A few
-degrees of margin more and it would be paying for the privilege.
+Hypervolume falls monotonically as the threshold tightens, but that is guaranteed by
+the geometry — a tighter constraint can only shrink the feasible set — so the shape of
+the middle of the curve is not evidence either way at one campaign per row. Locating
+the knee needs the sweep repeated at ten seed triples per threshold, roughly two hours
+of compute; it is filed in [`NEXT_SESSION.md`](NEXT_SESSION.md) as an upgrade to this
+section rather than a correction to it.
 
-As a design guideline, in one line: *enforce 40° for free; expect to give up
-roughly a tenth of the achievable improvement to reach 45°; do not ask for 55° on
-this mechanism.*
+This section used to close with a one-line design guideline — enforce 40° for free,
+expect to give up roughly a tenth of the achievable improvement to reach 45°. It has
+been deleted. It priced 45° against a seed spread estimated from three campaigns, and
+at the spread measured from ten this data cannot resolve that price at all.
 
 ### 7.4 The conclusions survive the definition underneath them; the magnitudes do not
 
@@ -473,6 +541,14 @@ directions:
 | 0.5% | 43.0% | 21.1% |
 | 1.0% | 34.2% | 24.2% |
 | 2.0% | 27.5% | 25.9% |
+
+**One campaign per row, and the rows are not separated from run-to-run variation.**
+The three best-gait values behind these percentages are 0.570 / 0.658 / 0.725, so
+consecutive bands are 0.088 and 0.067 apart against a measured seed-to-seed spread of
+0.081 (§7.1). Read the *direction* of the trend, for which there is a mechanism
+below; treat the magnitudes as indicative rather than measured. What is far outside
+noise is the qualitative result above — 7 of 7, 20 of 20 and 15 of 15 designs
+dominating Jansen.
 
 There is a mechanism behind the direction of each. A **narrower** band counts only
 the very bottom of the stroke as stance, which is the flattest part of an already
@@ -518,7 +594,11 @@ closed. That strengthens §6 rather than weakening it.
 
 This was the last open discrepancy in the repo. §1 reports the paper's 25.7 mm of
 ground clearance against our 22.23 mm, and notes that it cannot be a stance-definition
-problem because 25.7 mm does not fit inside our 22.46 mm foot path at all.
+problem because 25.7 mm does not fit inside our 22.46 mm foot path at all. That
+step is exact rather than approximate: clearance is identically `(1 − band) ×
+path height`, so no band reaches 25.7 mm from a 22.46 mm path, and fitting the
+clearance is fitting the path height. Which is why the fit below moves the path
+height and reports it in the same table.
 `METRIC_DEFINITIONS.md` then blamed "slightly different link lengths, or an unstated
 normalization" and stopped. That is a hypothesis, not an answer, so
 `scripts/clearance_fit.py` tests it.

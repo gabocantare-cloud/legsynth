@@ -125,11 +125,13 @@ cycle-mean-force shortcut costs **51%**, not the 3–4% it claims. Force and sli
 anti-correlated. Both calculations are validated by agreeing to 0.0% at the crank pin, the one
 joint where they must agree analytically.
 
-**Do not restore the claim that the bias cancels in the ratio.** It was asserted here for a
-while and §7.2 of `docs/RESULTS.md` measured it: optimising against the integrated form moves
-the best achievable gait error from 0.658 to 0.710, which is 1.8x the seed-to-seed spread.
-The central claim survives (Jansen is dominated under either wear definition); the "it all
-cancels" defence does not.
+**Do not assert either direction on "the bias cancels in the ratio" without new evidence.**
+It was asserted here for a while, then refuted from a single pair of campaigns, and §7.2 of
+`docs/RESULTS.md` now reports it measured at ten seed triples: the paired difference in best
+achievable gait error averages −0.0036, 95% CI [−0.018, +0.011], four of ten positive. No
+detectable effect on where the optimum sits, which is not the same as proof that it cancels.
+The central claim survives either way (Jansen is dominated under either wear definition), and
+the 51% overstatement of the absolute figures stands.
 
 `legsynth/constraints.py` — the extension. **The key result is the loaded/unloaded
 distinction:** Jansen's minimum transmission angle is 8.6° over the whole cycle but 42.7°
@@ -139,7 +141,8 @@ whole-cycle constraint would reject Jansen's own linkage for a defect that costs
 whole-cycle minimum.
 
 `legsynth/optimize.py` — NSGA-II via pymoo. The search is **seeded from the baseline** because
-0 of 600 uniformly sampled designs satisfy the paper's own constraints: stance is a band near
+0 or 1 of 600 uniformly sampled designs satisfies the paper's own constraints, across three
+draws (`scripts/feasibility.py`, under 0.2% either way): stance is a band near
 the lowest point, so a design that loses Jansen's flat bottom loses its measured step length
 too, making the feasible set a thin shell around Jansen.
 
@@ -186,7 +189,7 @@ like bugs until you know why they were made.
 
 ## Conventions
 
-- Python 3.9+, numpy / scipy / matplotlib, `pymoo` for optimization (all now in use).
+- Python 3.10+, numpy / scipy / matplotlib, `pymoo` for optimization (all now in use).
 - Everything vectorized over crank angle where possible.
 - Every new physics module gets a test that checks a property you can reason about
   physically (rigid links stay rigid, forces balance, wear is non-negative).

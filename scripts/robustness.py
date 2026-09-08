@@ -5,23 +5,26 @@ Each study here exists because a sentence already in `README.md` or
 comes back and the sentence stands, or it does not and the sentence changes.
 
   seeds      "The gap between the two Pareto fronts is run-to-run variation,
-             not a cost." Run the unconstrained campaign three times with
-             different seed triples and measure how far the front moves on its
-             own. If that spread covers the constrained-vs-unconstrained gap,
-             the sentence is established; if it does not, the constraint really
-             costs something and the write-up is wrong.
+             not a cost." Run the unconstrained campaign at ten different seed
+             triples and measure how far the front moves on its own. If that
+             spread covers the constrained-vs-unconstrained gap, the sentence is
+             established; if it does not, the constraint really costs something
+             and the write-up is wrong.
 
   objective  "The 51% mean-force bias partly cancels between designs, so the
              paper's ratio-based conclusions survive." Re-run with the second
              objective switched from the paper's cycle-mean-force wear to the
-             integrated form. If the front barely moves, the shortcut changes
-             the magnitude but not the answer. If it moves, that is a second
-             finding about the shortcut.
+             integrated form, at every seed triple, and read the mean of the
+             paired differences. One pair is not enough: the first pair run
+             here moved by +0.052 and turned out to be the largest of ten
+             differences averaging -0.004.
 
   threshold  The transmission-angle constraint was non-binding at 40 deg. A
-             null is a weak statement; a curve is a strong one. Sweep the
-             threshold and find where it starts costing gait or wear. "Free up
-             to X deg, costs Y% beyond it" is a design guideline.
+             null is a weak statement; a curve is a stronger one. Sweep the
+             threshold and see where it starts costing gait or wear. One
+             campaign per threshold only resolves the ends of that curve - at
+             the measured seed spread, 45 and 50 deg are inside noise - so read
+             it as "free at 40, impossible at 55" rather than as a price list.
 
   band       The whole repo rests on stance band = 1% of path height.
              `METRIC_DEFINITIONS.md` shows how the *baseline* metrics move with
@@ -73,7 +76,17 @@ hypervolume = O.hypervolume
 
 THRESHOLDS = (40.0, 45.0, 50.0, 55.0)
 BANDS = (0.005, 0.01, 0.02)
-SEED_TRIPLES = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
+#: Seed triples for the seeds and objective studies. Ten, not three: three
+#: campaigns were run first, and the range they gave understated the true
+#: seed-to-seed spread by 7x on hypervolume and 2.7x on best gait error, because
+#: the range of n samples grows with n. Every yardstick in RESULTS section 7 is
+#: the ten-triple number, and these are the triples that produced it
+#: (results/audit/objective_replication.json). Ten triples is roughly an hour on
+#: 12 cores for the seeds study; the objective study shares its unconstrained
+#: campaigns through the cache and costs about the same again.
+SEED_TRIPLES = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11), (12, 13, 14),
+                (15, 16, 17), (18, 19, 20), (21, 22, 23), (24, 25, 26),
+                (27, 28, 29))
 
 
 def campaign(label, seeds, pop, gens, n_refine, min_angle=None,
@@ -121,9 +134,46 @@ def campaign(label, seeds, pop, gens, n_refine, min_angle=None,
 
 
 def spread(values):
-    """Max minus min: the plainest statement of how far a number wandered."""
+    """How far a number wandered: the range, the standard deviation, and n.
+
+    The range is the plainest statement of it and it is the one the write-up
+    quotes, but on its own it is a trap. The range of n samples *grows with n* -
+    about 1.7 standard deviations at n=3, about 3.1 at n=10 - so this function
+    returns a systematically smaller spread the fewer campaigns you ran, and
+    every comparison made against it is biased toward "the difference is real".
+    That is exactly the error this repo made when the spread was estimated from
+    three campaigns and then used as a yardstick in three sections. The standard
+    deviation does not have that property, so it is returned alongside and
+    recorded in the JSON; compare against it whenever the sample sizes differ.
+    """
     v = [x for x in values if np.isfinite(x)]
-    return float(max(v) - min(v)) if len(v) > 1 else float("nan")
+    if len(v) < 2:
+        return dict(range=float("nan"), sd=float("nan"), n=len(v))
+    return dict(range=float(max(v) - min(v)), sd=float(np.std(v, ddof=1)),
+                n=len(v))
+
+
+#: How close the seed spread and the constraint gap have to be before the seeds
+#: study refuses to call it either way. See `seed_verdict`.
+INCONCLUSIVE_BAND = 0.25
+
+
+def seed_verdict(noise, gap):
+    """Three-valued verdict for the seeds study, plus the margin behind it.
+
+    This used to be `"noise" if noise >= gap else "cost"`, decided on a margin of
+    0.0004 off a three-campaign range - a coin flip printed as a fact, and
+    recorded in the JSON, where a later session reads the verdict rather than the
+    prose around it. When the two quantities are within `INCONCLUSIVE_BAND` of
+    each other, this many campaigns cannot decide, so say that instead. Returns
+    (verdict, spread / gap).
+    """
+    if not (np.isfinite(noise) and np.isfinite(gap)) or gap == 0.0:
+        return "inconclusive", float("nan")
+    margin = noise / gap
+    if abs(margin - 1.0) <= INCONCLUSIVE_BAND:
+        return "inconclusive", margin
+    return ("noise" if margin > 1.0 else "cost"), margin
 
 
 def cached(cache, key, *args, **kw):
@@ -148,26 +198,36 @@ def study_seeds(cfg, cache):
                  f"constrained 40 deg {trip}", trip,
                  min_angle=C.GOOD_TRANSMISSION_ANGLE, **cfg)
 
-    noise_hv = spread([c["hypervolume"] for c in unc])
-    noise_gait = spread([c["best_gait"] for c in unc])
+    noise = spread([c["hypervolume"] for c in unc])
+    noise_g = spread([c["best_gait"] for c in unc])
+    noise_hv, noise_gait = noise["range"], noise_g["range"]
     gap_hv = abs(unc[0]["hypervolume"] - con["hypervolume"])
     gap_gait = abs(unc[0]["best_gait"] - con["best_gait"])
-    verdict = "noise" if noise_hv >= gap_hv else "cost"
+    verdict, margin = seed_verdict(noise_hv, gap_hv)
 
-    print(f"\n  seed-to-seed spread, hypervolume : {noise_hv:.4f}")
+    print(f"\n  seed-to-seed spread, hypervolume : {noise_hv:.4f}"
+          f"  (sd {noise['sd']:.4f}, n={noise['n']})")
     print(f"  constrained-vs-unconstrained gap : {gap_hv:.4f}")
-    print(f"  seed-to-seed spread, best gait   : {noise_gait:.4f}")
+    print(f"  seed-to-seed spread, best gait   : {noise_gait:.4f}"
+          f"  (sd {noise_g['sd']:.4f}, n={noise_g['n']})")
     print(f"  constrained-vs-unconstrained gap : {gap_gait:.4f}")
-    print(f"  --> the gap is {'within' if verdict == 'noise' else 'LARGER than'}"
-          f" the search's own run-to-run spread")
+    print(f"  --> verdict: {verdict}   (spread / gap = {margin:.2f})")
     if verdict == "cost":
         print("      the constraint costs something; the write-up must change")
+    elif verdict == "inconclusive":
+        print(f"      spread and gap agree to within "
+              f"{100 * INCONCLUSIVE_BAND:.0f}%; this many campaigns cannot "
+              f"decide it, and more seed triples are the only fix")
 
     return dict(unconstrained=unc, constrained=con,
                 seed_spread_hypervolume=noise_hv,
                 seed_spread_best_gait=noise_gait,
+                seed_spread_hypervolume_sd=noise["sd"],
+                seed_spread_best_gait_sd=noise_g["sd"],
+                n_triples=noise["n"],
                 constraint_gap_hypervolume=gap_hv,
-                constraint_gap_best_gait=gap_gait, verdict=verdict)
+                constraint_gap_best_gait=gap_gait,
+                margin=margin, verdict=verdict)
 
 
 # --------------------------------------------------------------------------
@@ -175,27 +235,69 @@ def study_seeds(cfg, cache):
 # --------------------------------------------------------------------------
 
 def study_objective(cfg, cache):
+    """Does switching the wear definition move the front, or only its size?
+
+    Every triple in `SEED_TRIPLES`, not one. This study was run at a single pair
+    of campaigns first and reported a +0.052 move in best gait error as a
+    finding. Repeated at ten pairs, that pair turned out to be the *maximum* of
+    ten differences averaging -0.0036, and the finding was withdrawn. The
+    comparison is paired by construction - same seeds, same band, same sample
+    count, only `wear_key` changes - which is what makes the mean of the paired
+    differences the statistic to read, rather than either campaign alone.
+
+    Best gait error is the only axis the two campaigns share. Their wear axes
+    are not comparable (each normalises against a Jansen measured its own way,
+    so each sits at (1, 1) while reducing a different quantity), and
+    hypervolume mixes both axes and inherits that. The hypervolumes are still
+    recorded, but they are not the answer to this question.
+    """
     print("\n=== OBJECTIVE: does the paper's mean-force wear shortcut move the "
           "front? ===")
-    trip = SEED_TRIPLES[0]
-    mean = cached(cache, ("unc", trip, M.DEFAULT_BAND, "wear"),
-                  f"mean-force wear (paper) {trip}", trip, min_angle=None, **cfg)
-    integ = cached(cache, ("unc", trip, M.DEFAULT_BAND, "wear_integrated"),
-                   f"integrated wear {trip}", trip, min_angle=None,
-                   wear_key="wear_integrated", **cfg)
+    pairs = []
+    for trip in SEED_TRIPLES:
+        mean = cached(cache, ("unc", trip, M.DEFAULT_BAND, "wear"),
+                      f"mean-force wear (paper) {trip}", trip, min_angle=None,
+                      **cfg)
+        integ = cached(cache, ("unc", trip, M.DEFAULT_BAND, "wear_integrated"),
+                       f"integrated wear {trip}", trip, min_angle=None,
+                       wear_key="wear_integrated", **cfg)
+        pairs.append(dict(seeds=list(trip),
+                          best_gait_mean=mean["best_gait"],
+                          best_gait_integrated=integ["best_gait"],
+                          delta=integ["best_gait"] - mean["best_gait"],
+                          hv_mean=mean["hypervolume"],
+                          hv_integrated=integ["hypervolume"]))
 
-    d_hv = integ["hypervolume"] - mean["hypervolume"]
-    d_gait = integ["best_gait"] - mean["best_gait"]
-    d_wear = integ["best_wear"] - mean["best_wear"]
-    print(f"\n  hypervolume  {mean['hypervolume']:.4f} -> "
-          f"{integ['hypervolume']:.4f} "
-          f"({100 * d_hv / mean['hypervolume']:+.1f}%)")
-    print(f"  best gait    {mean['best_gait']:.3f} -> {integ['best_gait']:.3f} "
-          f"({100 * d_gait / mean['best_gait']:+.1f}%)")
-    print(f"  best wear    {mean['best_wear']:.3f} -> {integ['best_wear']:.3f} "
-          f"({100 * d_wear / mean['best_wear']:+.1f}%)")
-    return dict(mean_force=mean, integrated=integ, d_hypervolume=d_hv,
-                d_best_gait=d_gait, d_best_wear=d_wear)
+    d = np.array([p["delta"] for p in pairs], float)
+    d = d[np.isfinite(d)]
+    n = len(d)
+    mean_d = float(d.mean()) if n else float("nan")
+    sd = float(d.std(ddof=1)) if n > 1 else float("nan")
+    stderr = sd / np.sqrt(n) if n > 1 else float("nan")
+    ci = [mean_d - 1.96 * stderr, mean_d + 1.96 * stderr] if n > 1 else [
+        float("nan"), float("nan")]
+    n_pos = int((d > 0).sum())
+
+    print(f"\n  paired difference in best gait error, {n} seed triples")
+    for p in pairs:
+        print(f"    {str(tuple(p['seeds'])):<14} "
+              f"{p['best_gait_mean']:.4f} -> {p['best_gait_integrated']:.4f}"
+              f"   {p['delta']:+.4f}")
+    print(f"  mean {mean_d:+.4f}   sd {sd:.4f}   "
+          f"95% CI [{ci[0]:+.4f}, {ci[1]:+.4f}]   {n_pos} of {n} positive")
+    straddles = n > 1 and ci[0] < 0.0 < ci[1]
+    tail = ("no detectable effect on the reachable gait quality" if straddles
+            else "the wear definition moves the reachable gait quality")
+    print(f"  --> the interval "
+          f"{'straddles' if straddles else 'excludes'} zero: {tail}")
+
+    return dict(pairs=pairs, n_pairs=n, delta_mean=mean_d, delta_sd=sd,
+                delta_stderr=float(stderr), ci95=[float(c) for c in ci],
+                n_positive=n_pos, straddles_zero=bool(straddles),
+                mean_force=cache[("unc", SEED_TRIPLES[0], M.DEFAULT_BAND,
+                                  "wear")],
+                integrated=cache[("unc", SEED_TRIPLES[0], M.DEFAULT_BAND,
+                                  "wear_integrated")])
 
 
 # --------------------------------------------------------------------------

@@ -218,15 +218,39 @@ def fig_optimized_gif(res):
     print("wrote figures/optimized_leg.gif")
 
 
+def seed_spread_hypervolume():
+    """The unconstrained seed-to-seed hypervolume spread, and how many triples.
+
+    Preferred source is `results/audit/objective_replication.json`, ten
+    unconstrained triples run to settle RESULTS.md 7.2; the seeds study in
+    `robustness.json` is the fallback. Which one is used matters more than it
+    looks: `spread()` is a range, and the range of three samples is biased low
+    by construction, so the three-triple figure (0.0024) is 7x smaller than the
+    ten-triple one (0.0170). Drawing the small band behind this curve is what
+    made the middle of the sweep look resolved when it is not.
+    """
+    rep = load_results(os.path.join("audit", "objective_replication.json"))
+    if rep:
+        hv = [pair["hv_mean"] for pair in rep["pairs"]]
+        if len(hv) >= 2:
+            return max(hv) - min(hv), len(hv)
+    rob = load_results("robustness.json") or {}
+    seeds = rob.get("seeds", {})
+    noise = seeds.get("seed_spread_hypervolume")
+    if noise:
+        return noise, len(seeds.get("campaigns", [])) or 3
+    return None, 0
+
+
 def fig_threshold(rob):
     """What the transmission-angle constraint costs as it is tightened.
 
-    The point of the figure is the *shape*, not any one bar. A null result -
-    "the constraint was free" - is a shrug. A curve that is flat and then turns
-    down says where the constraint stops being free, which is a number a
-    designer can use. The seed-to-seed band is drawn behind it because a change
-    smaller than the search's own run-to-run spread is not a change at all, and
-    a reader is entitled to see that comparison rather than be told it.
+    The point of the figure is the *shape*, and specifically its two ends: free
+    at 40 deg, and a cliff at 55. The seed-to-seed band is drawn behind it
+    because a change smaller than the search's own run-to-run spread is not a
+    change at all, and a reader is entitled to see that comparison rather than
+    be told it. Measured over ten triples the band swallows 45 and 50 deg, so
+    the figure now shows what the sweep can and cannot resolve.
     """
     sweep = rob.get("threshold", {}).get("sweep")
     free = rob.get("threshold", {}).get("unconstrained")
@@ -237,17 +261,18 @@ def fig_threshold(rob):
     hv0 = free["hypervolume"]
 
     fig, ax = plt.subplots(figsize=(6.6, 4.4))
-    noise = rob.get("seeds", {}).get("seed_spread_hypervolume")
+    noise, n_triples = seed_spread_hypervolume()
     if noise:
         ax.axhspan(hv0 - noise, hv0 + noise, color="tab:blue", alpha=0.12,
-                   label="seed-to-seed spread, unconstrained")
+                   label=f"seed-to-seed spread, unconstrained "
+                         f"({n_triples} triples)")
     ax.axhline(hv0, ls="--", color="tab:blue", lw=1.5,
                label=f"unconstrained ({hv0:.3f})")
     ax.plot(thresholds, hv, "o-", color="tab:red", lw=2, ms=7,
             label="with the constraint")
     ax.set_xlabel("minimum loaded transmission angle enforced (deg)")
     ax.set_ylabel("hypervolume dominated (Jansen = reference)")
-    ax.set_title("What the manufacturability constraint costs")
+    ax.set_title("Free at 40°, impossible at 55°")
     ax.set_ylim(bottom=0.0)
     ax.grid(alpha=0.3)
     ax.legend(fontsize=8)
