@@ -13,6 +13,12 @@ papers/
 results/*
 !results/*.json
 !results/cad/
+# The audit's own evidence ships with the repo: results/audit/ holds campaigns run
+# by the pre-publication audit to settle a contested claim, and a reader who cannot
+# see them cannot check the finding. Un-ignoring the directory is what lets git
+# descend into it - a `!` on the files alone cannot rescue them from an excluded
+# parent.
+!results/audit/
 
 # --quick is a smoke test. Its outputs are never the published ones, so they
 # never get committed.
