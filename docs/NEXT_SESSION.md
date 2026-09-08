@@ -24,7 +24,13 @@ were introduced by exactly that kind of well-meaning fix.
 2. ~~**fix**~~ — **done.** Every finding in [`FINDINGS.md`](audit/FINDINGS.md) was worked
    through [`FIX_PLAN.md`](audit/FIX_PLAN.md); nothing was left unfixed. `verify_docs.py
    --slow` is green at 40 claims, `pytest` at 91, `ruff` clean.
-3. **publish** — the P0 below.
+3. **publish** — done; the repo is private at `gabocantare-cloud/legsynth`.
+
+A fourth step was added after the push: **peer review.** A reviewing session is
+asked to audit the fix session's work rather than the repo as a whole — see
+[`docs/audit/PEER_REVIEW_REQUEST.md`](audit/PEER_REVIEW_REQUEST.md), which carries
+three defects the fix session found in its own work and did not fix, the largest
+being a 95% CI computed with a normal multiplier on ten samples.
 
 **What the audit changed, in one paragraph, because you will otherwise defend the old
 version.** §7.2's headline — that the paper's mean-force wear shortcut moves the optimum —
