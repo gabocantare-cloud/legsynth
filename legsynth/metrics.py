@@ -190,8 +190,20 @@ def ground_clearance(path, band=DEFAULT_BAND, tol=None):
         clearance = max(y) - y_ground
 
     Physically: the tallest obstacle the leg can step over without stubbing.
-    It is bounded above by the path height, so it barely moves with the band —
-    the one metric the stance definition cannot explain away.
+
+    Worth being explicit about, because it is easy to read this as a fifth
+    independent measurement and it is not. With the ground line at
+    `min(y) + band * H`, the definition collapses to an identity:
+
+        clearance = max(y) - min(y) - band * H = (1 - band) * H
+
+    So at the published 1% band this metric *is* the path height, to within a
+    percent, and it scales linearly and exactly with the band rather than
+    "barely moving" with it. Nothing built on it changes — but it means a claim
+    about clearance is a claim about path height, and the 0.85x clearance
+    constraint is a 0.85x path-height constraint. Passing `tol` instead of
+    `band` breaks the identity, since a fixed millimetre tolerance does not
+    scale with the path.
     """
     _, y = _xy(path)
     if not np.all(np.isfinite(y)):

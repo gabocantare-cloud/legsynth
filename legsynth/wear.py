@@ -91,9 +91,12 @@ def wear_per_cycle(sol, k=K_WEAR, r_pin=R_PIN):
     rot = relative_rotations(sol)
     sliding = r_pin * rot
     f = sol["forces"]
-    mean_force = np.nanmean(f, axis=0) if np.isfinite(f).any() else np.full(10, np.nan)
-    if not np.isfinite(f).all():
-        mean_force = np.full(f.shape[1], np.nan)
+    # One NaN anywhere in the force history means the design failed to
+    # assemble at some crank angle, and a mean over the samples that did solve
+    # would be a wear number for a leg that does not exist. So it is all or
+    # nothing, per design rather than per sample.
+    mean_force = (np.mean(f, axis=0) if np.isfinite(f).all()
+                  else np.full(f.shape[1], np.nan))
     per_joint = k * mean_force * sliding
 
     # Integrated form: sum |F| * r_pin * |d phi| step by step round the cycle.

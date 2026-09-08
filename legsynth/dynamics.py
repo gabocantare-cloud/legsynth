@@ -275,9 +275,13 @@ def power_residual(leg, sol, **kw):
 
     mismatch = sol["torque"] + power
     # Drop the touchdown and lift-off samples: the ground reaction switches on
-    # as a step there, so a centred difference straddles the discontinuity.
+    # as a step there, so a centred difference straddles the discontinuity. The
+    # window is symmetric - two samples either side - because the discontinuity
+    # is. The residual is 4.1e-5 either way; an asymmetric window just reads as
+    # a typo.
     edge = sol["stance"] != np.roll(sol["stance"], 1)
-    edge |= np.roll(edge, -1) | np.roll(edge, 1) | np.roll(edge, 2)
+    edge |= (np.roll(edge, -2) | np.roll(edge, -1)
+             | np.roll(edge, 1) | np.roll(edge, 2))
     keep = ~edge & np.isfinite(mismatch)
     scale = np.sqrt(np.mean(sol["torque"][keep] ** 2))
     return float(np.sqrt(np.mean(mismatch[keep] ** 2)) / scale)

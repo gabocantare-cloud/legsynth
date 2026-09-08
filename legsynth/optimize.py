@@ -231,8 +231,10 @@ def seeded_population(pop, seed=0, fraction=SEEDED_FRACTION):
     """Starting designs: mostly jittered Jansen, the rest spread across the box.
 
     A uniform random start does not work on this problem. Of 600 designs drawn
-    uniformly from the +/-30% box, 17% assemble at all and **none** satisfy the
-    paper's own constraints — step length and duty factor fail in essentially
+    uniformly from the +/-30% box, 14.7-20.3% assemble at all and 0 or 1
+    satisfies the paper's own constraints — measured at three seeds by
+    `scripts/feasibility.py`, because both counts are properties of a draw
+    rather than of the box. Step length and duty factor fail in essentially
     every one. The reason is worth stating, because it is a property of the
     mechanism and not of the optimizer: our stance band sits within 1% of the
     path height, so a design that loses Jansen's unusually flat bottom stroke

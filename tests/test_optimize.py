@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from legsynth.kinematics import HOLY, DESIGN_KEYS
+from legsynth import constraints as C
 from legsynth import optimize as O
 
 JANSEN = np.array([HOLY[k] for k in DESIGN_KEYS], float)
@@ -239,6 +240,24 @@ def test_the_stance_band_reaches_the_statics_as_well_as_the_metrics():
         "wear must rise with the band; it did not, so band is being dropped")
     assert wear[2] / wear[0] > 1.15, (
         "and the effect should be sizeable, not rounding")
+
+    # `constraints.check` is the other entry point that takes a band, and it
+    # dropped it for a while: it called `transmission_angles` without one, so it
+    # answered for the default band whatever it was asked. A wider band counts
+    # more of the turn as stance, which can only add samples to the minimum, so
+    # the loaded angle must be non-increasing in the band, and it has to move
+    # somewhere. It does not move between 0.5% and 2% - Jansen's worst loaded
+    # angle sits well inside the stance window at every band that narrow - so
+    # the check has to reach out to a band wide enough to pull shallower
+    # samples in.
+    leg = O.leg_from_vector(x)
+    mu = [C.check(leg, n=360, band=b)["min_transmission_angle"]
+          for b in (0.01, 0.1, 0.2)]
+    assert mu[0] >= mu[1] >= mu[2], (
+        "the loaded minimum angle must not rise as stance widens")
+    assert mu[0] - mu[2] > 5.0, (
+        "check() barely moved across a 20x band change, so band is being "
+        "dropped between check() and transmission_angles")
 
 
 def test_jansen_is_still_the_anchor_under_the_integrated_wear_objective():

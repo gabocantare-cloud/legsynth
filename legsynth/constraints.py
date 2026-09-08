@@ -60,7 +60,7 @@ Measured over the whole revolution, Jansen's own linkage bottoms out at 8.6
 degrees, which the 40-degree rule would call unbuildable. Look at when that
 happens and the verdict inverts: it happens mid-swing, with the foot in the air
 and 0.6 N in the pin. Meanwhile the largest pin force in the cycle, 25.8 N,
-arrives at a perfectly healthy 56 degrees.
+arrives at a perfectly healthy 48 degrees.
 
 A shallow angle only costs you something when there is force behind it. So the
 constraint this repo enforces is the **minimum transmission angle during
@@ -138,7 +138,7 @@ def _fold(u, w):
     return np.degrees(np.minimum(a, np.pi - a))
 
 
-def transmission_angles(leg, n=720, pts=None, band=M.DEFAULT_BAND):
+def transmission_angles(leg, n=M.N_PUBLISHED, pts=None, band=M.DEFAULT_BAND):
     """Transmission angle at each defined interface, over one revolution.
 
     Returns a dict of label -> array of degrees in [0, 90], plus
@@ -166,7 +166,8 @@ def transmission_angles(leg, n=720, pts=None, band=M.DEFAULT_BAND):
     return out
 
 
-def min_transmission_angle(leg, n=720, stance_only=True, band=M.DEFAULT_BAND):
+def min_transmission_angle(leg, n=M.N_PUBLISHED, stance_only=True,
+                           band=M.DEFAULT_BAND):
     """Worst transmission angle in degrees. NaN if the design does not assemble.
 
     By default this is the worst angle *while the foot is on the ground*, which
@@ -177,7 +178,7 @@ def min_transmission_angle(leg, n=720, stance_only=True, band=M.DEFAULT_BAND):
     return ta["min_stance"] if stance_only else ta["min"]
 
 
-def force_amplification(leg, n=360, grf=D.GROUND_REACTION, **kw):
+def force_amplification(leg, n=M.N_PUBLISHED, grf=D.GROUND_REACTION, **kw):
     """Largest pin force in the cycle, as a multiple of the ground reaction.
 
     1.0 means the pins carry exactly what the foot carries. Large values mean
@@ -191,7 +192,7 @@ def force_amplification(leg, n=360, grf=D.GROUND_REACTION, **kw):
     return float(np.max(f) / grf)
 
 
-def branch_margin(leg, n=720):
+def branch_margin(leg, n=M.N_PUBLISHED):
     """How close the leg comes to flipping assembly branch, normalised.
 
     Each joint in the cascade is the meeting point of two circles. Reproducing
@@ -221,15 +222,29 @@ def branch_margin(leg, n=720):
     return worst / scale
 
 
-def check(leg, n=360, min_angle=GOOD_TRANSMISSION_ANGLE,
-          max_amp=MAX_AMPLIFICATION, min_margin=MIN_BRANCH_MARGIN):
+def check(leg, n=M.N_PUBLISHED, min_angle=GOOD_TRANSMISSION_ANGLE,
+          max_amp=MAX_AMPLIFICATION, min_margin=MIN_BRANCH_MARGIN,
+          band=M.DEFAULT_BAND):
     """Full manufacturability report for one design.
 
     Returns a dict with the measures, a pass/fail against each threshold, and
     `ok`, True only if the leg assembles and passes all three. The reported
     transmission angle is the loaded (stance) one; the whole-cycle value is
     carried alongside as `min_transmission_angle_cycle` for reference but is
-    not what the design is judged on. Cheap enough to call in an optimizer loop.
+    not what the design is judged on.
+
+    `band` decides which samples count as stance and therefore which angles the
+    loaded minimum is taken over, so it has to reach `transmission_angles` -
+    this function used to drop it and silently report the default band's answer
+    whatever the caller asked for. That is the same defect shape that already
+    cost this repo one study: a parameter threaded through one path and
+    defaulted on another gives plausible numbers rather than a crash.
+
+    `n` defaults to `M.N_PUBLISHED`, the one sample count behind every published
+    number in the repo. The four measures below are sensitive to it - stance is
+    an arc, so how finely the turn is sampled changes where its edges fall - and
+    having each entry point default to a different count was a good way to get
+    two different answers to the same question.
     """
     if not leg.assembles(n):
         return dict(assembles=False, min_transmission_angle=float("nan"),
@@ -237,7 +252,7 @@ def check(leg, n=360, min_angle=GOOD_TRANSMISSION_ANGLE,
                     force_amplification=float("nan"), branch_margin=0.0,
                     passes_angle=False, passes_amplification=False,
                     passes_branch=False, ok=False)
-    ta = transmission_angles(leg, n)
+    ta = transmission_angles(leg, n, band=band)
     mu, mu_cycle = ta["min_stance"], ta["min"]
     amp = force_amplification(leg, n)
     margin = branch_margin(leg, n)
