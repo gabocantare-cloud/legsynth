@@ -18,7 +18,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install ruff
-        run: pip install ruff
+        # Pinned. The tree is clean on 0.16.6; an unpinned upgrade brings new
+        # default rules and fails this job on something cosmetic.
+        run: pip install ruff==0.16.6
       - name: Lint
         run: ruff check .
 
@@ -27,6 +29,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Matches `requires-python` in pyproject.toml. Do not claim a floor
+        # here that no job actually runs.
         python-version: ["3.10", "3.12"]
 
     steps:
@@ -43,3 +47,8 @@ jobs:
         run: pytest -q
       - name: Check the reported numbers still reproduce
         run: python scripts/gait_report.py
+      - name: Check the documents still agree with the code
+        # Every published number is pinned to the sentence that quotes it. This
+        # is what stops the docs drifting from the code between commits; --slow
+        # is left out because it needs results/*.json, which are not in the repo.
+        run: python scripts/verify_docs.py

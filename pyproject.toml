@@ -2,7 +2,9 @@
 name = "legsynth"
 version = "0.1.0"
 description = "Durability-aware synthesis of planar walking linkages"
-requires-python = ">=3.9"
+# 3.10 rather than 3.9: CI runs 3.10 and 3.12, and an untested
+# floor is a claim rather than a fact.
+requires-python = ">=3.10"
 dependencies = ["numpy", "scipy", "matplotlib", "pillow", "pymoo"]
 
 [project.optional-dependencies]
