@@ -14,7 +14,7 @@ python scripts/mechanics_report.py   # pin forces, wear, transmission angles
 python scripts/run_optimization.py   # both Pareto fronts (~10 min, all cores)
 python scripts/feasibility.py        # §5's assembly and feasibility rates (~1 min)
 python scripts/make_figures.py       # every figure below
-python scripts/robustness.py         # the studies behind §7 (~50 min)
+python scripts/robustness.py         # the studies behind §7 (46 campaigns, 2 h 32 m)
 ```
 
 Where a number disagrees with Wang (2026), it is reported as a disagreement.
@@ -126,10 +126,10 @@ absolute wear numbers are high by about half.
 
 It used to say, here, that the bias "partly cancels between designs, so the
 ratio-based conclusions survive". That was reasoning rather than measurement. It has
-since been measured, at ten seed triples rather than the one pair this paragraph was
-first rewritten from: switching the campaign to the integrated wear form moves the
-best achievable gait error by −0.0036 on average, 95% CI [−0.018, +0.011], with four
-of ten triples positive. There is no detectable effect on where the optimum sits —
+since been measured, at twenty seed triples rather than the one pair this paragraph
+was first rewritten from: switching the campaign to the integrated wear form moves the
+best achievable gait error by +0.0004 on average, 95% CI [−0.011, +0.012], with nine
+of twenty triples positive. There is no detectable effect on where the optimum sits —
 which is not the same as showing the bias cancels, only that this experiment cannot
 see it move. What does stand is the magnitude: the absolute wear numbers are high by
 about half. See §7.2.
@@ -199,9 +199,10 @@ Of 600 designs drawn uniformly from the paper's own ±30% box:
 
 So **14.7–20.3% assemble at all, and 0 or 1 in 600 satisfies the paper's
 constraints** (step length, clearance and duty factor each ≥ 0.85 × Jansen).
-Step length and duty factor fail in essentially every one. Even jittering
-Jansen's own lengths by 2% leaves only **2.8–5.8%** of designs feasible across
-the same three draws.
+Step length and duty factor fail in essentially every one. Even perturbing
+Jansen's own lengths — independent Gaussian relative jitter, σ = 2% per length,
+clipped to the ±30% box, so this is a standard deviation and not a bound —
+leaves only **2.8–5.8%** of designs feasible across the same three draws.
 
 Under 0.2% feasible either way, which is what the conclusion below rests on. An
 earlier version of this section quoted one draw — "17%", "**0**", "4%" — as
@@ -344,8 +345,8 @@ Every claim in §6 above was once a sentence someone had reasoned their way to
 rather than measured. Four of them were load-bearing enough to be worth the
 compute, and `scripts/robustness.py` measures each one. Two came back confirming
 the sentence. One came back null once its single pair of campaigns was repeated at
-ten. One came back with a curve whose two ends are decisive and whose middle this
-data cannot resolve.
+ten, and stayed null when the sample was doubled to twenty. One came back with a
+curve whose two ends are decisive and whose middle this data cannot resolve.
 
 **How two fronts are compared.** Comparing two sets of points needs one number,
 and the honest one here is **hypervolume**: the area of the rectangle below-left
@@ -363,7 +364,7 @@ load-bearing sentence of the whole negative result, and it had never been
 measured. Measuring it is simple: run the *unconstrained* campaign with different
 random seeds and see how far the front moves on its own. Three campaigns were run
 first, and are tabulated below; the spread they gave turned out to be badly
-understated, so it was re-measured at ten.
+understated, so it was re-measured at ten, and then at **twenty**.
 
 | Campaign | Seeds | Front | Hypervolume | Best gait | Best wear |
 |---|---|---|---|---|---|
@@ -374,35 +375,49 @@ understated, so it was re-measured at ten.
 
 | | Seed-to-seed spread | Constrained-vs-unconstrained gap |
 |---|---|---|
-| Hypervolume | 0.0170 (sd 0.0052) | 0.0020 |
-| Best gait error | 0.0810 (sd 0.0255) | 0.0180 |
+| Hypervolume | 0.0229 (sd 0.0055) | 0.0020 |
+| Best gait error | 0.0939 (sd 0.0252) | 0.0180 |
 
-The spread column is measured over **ten** unconstrained seed triples — (0, 1, 2)
-through (27, 28, 29) — not over the three campaigns tabulated above. The twenty
-campaigns behind it are in
-[`results/audit/objective_replication.json`](../results/audit/objective_replication.json).
-Three campaigns give a range that is biased low by construction, because the range of
-*n* samples grows with *n*: the three-campaign estimates this section used to quote,
-0.0024 and 0.0297, understate the ten-triple spread by 7.1x and 2.7x. Every place
-§7.2, §7.3 and §7.4 use "the seed-to-seed spread" as a yardstick, it is the
-ten-triple number.
+The spread column is measured over **twenty** unconstrained seed triples — (0, 1, 2)
+through (57, 58, 59) — not over the three campaigns tabulated above. They are in
+[`results/robustness.json`](../results/robustness.json), from one run of
+`scripts/robustness.py`. Three campaigns give a range that is biased low by
+construction, because the range of *n* samples grows with *n*: the three-campaign
+estimates this section used to quote, 0.0024 and 0.0297, understate the twenty-triple
+spread by 9.4x and 3.2x. Every place §7.2, §7.3 and §7.4 use "the seed-to-seed
+spread" as a yardstick, it is the twenty-triple number.
+
+**Going from ten triples to twenty demonstrated the range problem rather than just
+asserting it.** The hypervolume *range* grew from 0.0170 to 0.0229 — 35% wider from
+nothing but drawing more samples — while the standard deviation over the same
+campaigns barely moved, 0.0052 to 0.0055. That is the bias this section warns about,
+measured in this section's own data: a yardstick that grows with sample size is not a
+yardstick. The sd is what the verdict is decided on, and it is the number that held
+still.
 
 **The claim stands, and the cleanest way to say it is by inspection.** The
-constrained campaign's hypervolume, 0.0664, falls *inside* the range the ten
-unconstrained campaigns span on their own (0.0514 to 0.0684). So does its best gait
-error, 0.676, inside 0.658 to 0.739. Changing the random seed moves the front further
+constrained campaign's hypervolume, 0.0664, falls *inside* the range the twenty
+unconstrained campaigns span on their own (0.0478 to 0.0707). So does its best gait
+error, 0.676, inside 0.655 to 0.749. Changing the random seed moves the front further
 than adding the constraint does. (The three campaigns in the table above span only
 0.0660 to 0.0684 — that narrower window is the three-sample artefact, not a
 different measurement.)
 
-The margin is not thin, and widening the sample is what showed that. The hypervolume
-gap is 0.0020 against a spread of 0.0170 — a factor of 8.5, where the three-campaign
-estimate had suggested 1.2 — and the best-gait gap is 0.0180 against 0.0810. **This
-is the best-supported claim in §7.** What would be indefensible is the version of the
-sentence that shipped before either measurement: asserting "that is just noise"
-without ever measuring the noise.
+The margin is not thin, and widening the sample is what showed that. Read it off the
+standard deviation, not the range: the range of *n* samples grows with *n*, so a
+comparison against it gets stronger the more campaigns you run, which is not a
+property a decision rule may have. The hypervolume gap is 0.0020 against a
+seed-to-seed **sd of 0.0055** — a factor of 2.8 — and the best-gait gap is 0.0180
+against an sd of 0.0252, a factor of 1.4. (Against the ranges the factors are 11.5
+and 5.2, where the three-campaign estimate had suggested 1.2; the ranges are quoted
+above as description, and `scripts/robustness.py` decides its verdict on the sd.)
+**This is the best-supported claim in §7**, and it survives both the stricter
+statistic and a doubled sample: at ten triples the factor was 2.6, at twenty it is
+2.8. What would be indefensible is the version of the sentence that shipped before
+any of these measurements: asserting "that is just noise" without ever measuring the
+noise.
 
-### 7.2 The paper's mean-force shortcut inflates the magnitude — and, at ten seed triples, does not move the optimum
+### 7.2 The paper's mean-force shortcut inflates the magnitude — and, at twenty seed triples, does not move the optimum
 
 This one came back against the write-up twice: first against what §3 asserted, and
 then against what this section itself concluded from a single pair of campaigns.
@@ -430,41 +445,84 @@ at least *paired* — same seed triple, same band, same sample count, only the w
 changed — which is a stronger design than the preamble contemplates. It is still not
 enough at one pair.
 
-So the pair was repeated at **ten seed triples**, (0, 1, 2) through (27, 28, 29),
-identical settings throughout (`pop=100, gens=80`, refined at 1440, no angle
-constraint, 1% band):
+So the pair was repeated at **twenty seed triples**, (0, 1, 2) through
+(57, 58, 59), identical settings throughout (`pop=100, gens=80`, refined at 1440, no
+angle constraint, 1% band). Twenty rather than ten because the width of the interval
+below falls as 1/sqrt(*n*): doubling the sample is the only change that buys
+resolution, where re-running the same ten would have bought none.
 
 | Seed triple | Best gait, mean-force | Best gait, integrated | Paired difference |
 |---|---|---|---|
-| (0, 1, 2) | 0.6580 | 0.7099 | **+0.0520** |
+| (0, 1, 2) | 0.6580 | 0.7099 | +0.0520 |
 | (3, 4, 5) | 0.6659 | 0.6635 | −0.0024 |
 | (6, 7, 8) | 0.6877 | 0.6977 | +0.0100 |
-| (9, 10, 11) | 0.7150 | 0.6960 | −0.0190 |
-| (12, 13, 14) | 0.7030 | 0.7050 | +0.0020 |
+| (9, 10, 11) | 0.7147 | 0.6963 | −0.0183 |
+| (12, 13, 14) | 0.7029 | 0.7051 | +0.0022 |
 | (15, 16, 17) | 0.7389 | 0.7229 | −0.0160 |
-| (18, 19, 20) | 0.6600 | 0.6640 | +0.0040 |
-| (21, 22, 23) | 0.7000 | 0.6750 | −0.0250 |
-| (24, 25, 26) | 0.7010 | 0.6790 | −0.0220 |
-| (27, 28, 29) | 0.6930 | 0.6740 | −0.0190 |
+| (18, 19, 20) | 0.6602 | 0.6635 | +0.0034 |
+| (21, 22, 23) | 0.7004 | 0.6747 | −0.0258 |
+| (24, 25, 26) | 0.7009 | 0.6787 | −0.0222 |
+| (27, 28, 29) | 0.6930 | 0.6744 | −0.0185 |
+| (30, 31, 32) | 0.7167 | 0.7320 | +0.0154 |
+| (33, 34, 35) | 0.6867 | 0.6731 | −0.0136 |
+| (36, 37, 38) | 0.6894 | 0.7197 | +0.0303 |
+| (39, 40, 41) | 0.6548 | 0.6648 | +0.0099 |
+| (42, 43, 44) | 0.7237 | 0.7163 | −0.0075 |
+| (45, 46, 47) | 0.7087 | 0.7669 | **+0.0581** |
+| (48, 49, 50) | 0.7488 | 0.7241 | −0.0247 |
+| (51, 52, 53) | 0.6903 | 0.7064 | +0.0161 |
+| (54, 55, 56) | 0.6870 | 0.6707 | −0.0163 |
+| (57, 58, 59) | 0.6958 | 0.6708 | −0.0250 |
 
-**Mean paired difference −0.0036, sd 0.0231, 95% CI [−0.018, +0.011], four of ten
-positive.** The +0.0520 in the first row — the pair this section used to be built on,
-and the only pair that had been drawn — is the **maximum of the ten**, and the point
-estimate across all ten has the opposite sign to it. The twenty campaigns are in
-[`results/audit/objective_replication.json`](../results/audit/objective_replication.json).
+**Mean paired difference +0.0004, sd 0.0247, 95% CI [−0.011, +0.012], nine of twenty
+positive; paired *t*-test *p* = 0.95.** The interval is Student's *t* on nineteen
+degrees of freedom (t = 2.093), not 1.96: the sd is estimated from these same twenty
+numbers, and a normal multiplier would report an interval 6% narrower than they support —
+in the direction that flatters the null this section is arguing for. (At ten triples the
+same substitution was worth 13%; the penalty for getting it wrong shrinks as the sample
+grows, which is exactly why it mattered most when the sample was smallest.)
+
+**Doubling the sample did what it was supposed to do.** The interval narrowed from a
+width of 0.0330 at ten triples to 0.0231 at twenty — 30% tighter. Three things moved at
+once and it is worth separating them, because the agreement with 1/sqrt(2) is closer than
+it has any right to be: the sample size alone accounts for 29.3%, the *t* multiplier
+falling from 2.262 to 2.093 pulls in the same direction, and the sd rising from 0.0231 to
+0.0247 pushes the other way. The last two very nearly cancel, which is why the observed
+30% lands on top of the 29% the sample size predicts on its own. Do not read that as
+1/sqrt(*n*) being exact here — it is the dominant term, not the only one. The null is now a considerably stronger statement than it
+was: nine of twenty differences positive is as close to a coin toss as twenty draws
+get, and *p* = 0.95 means these data are almost exactly what you would expect if the
+wear definition made no difference at all.
+
+**The point estimate is not stable, and that is itself part of the result.** At ten
+triples it was −0.0036; at twenty it is +0.0004, the opposite sign. A point estimate
+that flips sign when you add ten more draws is a point estimate carrying no
+information, which is precisely what a null looks like — the interval is the finding,
+not the centre of it.
+
+The +0.0520 in the first row — the pair this section was originally built on, and the
+only pair that had been drawn — is no longer the largest difference: (45, 46, 47)
+returns **+0.0581**. That does not rescue the original finding, it deepens the
+problem with it. The one pair that happened to be drawn first was the second most
+extreme of twenty, and the more the space is sampled the more clearly it reads as one
+tail of a distribution centred on zero. The forty campaigns are in
+[`results/robustness.json`](../results/robustness.json).
 
 **The verdict.** Switching the second objective from the paper's mean-force wear to
 the integrated form does not detectably change the reachable gait quality. The
 paper's central claim survives under either definition: Jansen is Pareto-dominated on
-every front measured, now at ten triples rather than one. The first finding about the
-shortcut — that its absolute wear figures are high by 51% — is a separate measurement
-on the Jansen baseline and is untouched.
+every front measured, now at twenty triples rather than one. The first finding about
+the shortcut — that its absolute wear figures are high by 51% — is a separate
+measurement on the Jansen baseline and is untouched.
 
-**Which way this cuts.** Ten paired triples centred on zero remove the evidence
-*against* "the bias partly cancels in the ratio". They are not evidence *for* it: the
-interval still admits ±0.018, which is a quarter of the seed-to-seed spread but not
-zero. The defensible statement is "no detectable effect at ten seed triples", and
-neither direction should be re-asserted without new evidence.
+**Which way this cuts.** Twenty paired triples centred on zero remove the evidence
+*against* "the bias partly cancels in the ratio". They are still not evidence *for*
+it: the interval admits ±0.012, which is an eighth of the seed-to-seed *range* in
+best gait error (0.0939) and half its sd (0.0252), but not zero. Doubling the sample halved what the interval admits without moving
+it off zero, which is the shape of a real null rather than of an effect too small to
+have been caught yet — but "we could not detect it at twenty triples" remains the
+defensible statement, and neither direction should be re-asserted without new
+evidence.
 
 This section is also a worked example of its own preamble. The warning that best gait
 error can be moved by one lucky design at one corner was written three paragraphs
@@ -488,9 +546,9 @@ threshold shows where it stops being non-binding.
 
 **Free at 40°, impossible at 55°, and this sweep cannot say where in between the
 price begins.** Every row is one campaign at one seed triple, and the seed alone moves
-the unconstrained hypervolume by 0.0170 (§7.1) — **24.9%** of the 0.0684 baseline.
+the unconstrained hypervolume by 0.0229 (§7.1) — **33.5%** of the 0.0684 baseline.
 Against that yardstick the 2.9% lost at 40°, the 11.1% at 45° and the 13.0% at 50°
-are all inside noise. What the sweep does establish is that the price begins somewhere
+are all inside noise, and by a wider margin than the ten-triple spread implied. What the sweep does establish is that the price begins somewhere
 between 50° and 55°, and that Jansen's own 42.7° sits comfortably inside the free
 region.
 
@@ -503,14 +561,16 @@ you beat Jansen?" becomes no.
 Hypervolume falls monotonically as the threshold tightens, but that is guaranteed by
 the geometry — a tighter constraint can only shrink the feasible set — so the shape of
 the middle of the curve is not evidence either way at one campaign per row. Locating
-the knee needs the sweep repeated at ten seed triples per threshold, roughly two hours
-of compute; it is filed in [`NEXT_SESSION.md`](NEXT_SESSION.md) as an upgrade to this
-section rather than a correction to it.
+the knee needs the sweep repeated at ten seed triples per threshold — 40 campaigns,
+which at the rate measured for the §7 studies (200 s per campaign on 12 workers) is
+about two and a quarter hours; it is filed in
+[`NEXT_SESSION.md`](NEXT_SESSION.md) as an upgrade to this section rather than a
+correction to it.
 
 This section used to close with a one-line design guideline — enforce 40° for free,
 expect to give up roughly a tenth of the achievable improvement to reach 45°. It has
 been deleted. It priced 45° against a seed spread estimated from three campaigns, and
-at the spread measured from ten this data cannot resolve that price at all.
+at the spread measured from twenty this data cannot resolve that price at all.
 
 ### 7.4 The conclusions survive the definition underneath them; the magnitudes do not
 
@@ -545,7 +605,7 @@ directions:
 **One campaign per row, and the rows are not separated from run-to-run variation.**
 The three best-gait values behind these percentages are 0.570 / 0.658 / 0.725, so
 consecutive bands are 0.088 and 0.067 apart against a measured seed-to-seed spread of
-0.081 (§7.1). Read the *direction* of the trend, for which there is a mechanism
+0.094 (§7.1) — a spread that now exceeds both of them. Read the *direction* of the trend, for which there is a mechanism
 below; treat the magnitudes as indicative rather than measured. What is far outside
 noise is the qualitative result above — 7 of 7, 20 of 20 and 15 of 15 designs
 dominating Jansen.

@@ -18,7 +18,7 @@ Both are reported, because they need different fixes.
 A claim marked `inherited` reads `results/*.json` instead of recomputing. That
 is a weaker check - it establishes that the document matches the recorded run,
 not that the run was right - and the report labels it so. Campaign-scale claims
-are inherited because regenerating one costs ten minutes; run
+are inherited because regenerating one costs minutes; run
 `scripts/robustness.py` if you need them regenerated.
 
 Run:
@@ -40,6 +40,7 @@ import re
 import sys
 
 import numpy as np
+from scipy import stats
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from legsynth import JansenLeg, JANSEN_BRANCH                     # noqa: E402
@@ -109,23 +110,73 @@ def _json(name):
 
 
 @functools.lru_cache(maxsize=None)
-def _audit():
-    """The twenty campaigns behind RESULTS section 7's corrected numbers.
+def _robust():
+    """`results/robustness.json` - the live seed and objective studies.
 
-    Unlike `results/*.json` this one ships with the repo, so the claims that
-    read it are checkable from a fresh clone.
+    These claims used to read `results/audit/objective_replication.json`
+    instead, and the reason was real at the time: the audit had run the ten
+    triples behind section 7 while the seeds study on disk had been run at
+    three, so the shipped audit file was the only record of the published
+    numbers. The seeds study now runs at twenty triples and supersedes it, so
+    the live claims pin the live run. The audit file stays in the repo as the
+    historical record of what the ten-triple claim rested on; nothing reads it
+    any more.
+
+    Like the audit file and unlike most `results/*`, this one is tracked, so
+    the claims that read it are still checkable from a fresh clone.
     """
-    return _json(os.path.join("audit", "objective_replication.json"))
+    return _json("robustness.json")
 
 
-def _spread(rep, key):
-    """(range, sample standard deviation) of one field across the ten pairs.
+def _unconstrained():
+    """The unconstrained campaigns of the seeds study, one per seed triple."""
+    return _robust()["seeds"]["unconstrained"]
 
-    Both are returned because the range is what the write-up quotes and the sd
-    is what makes it comparable across sample sizes - the range of n samples
-    grows with n, which is the error these claims exist to prevent recurring.
+
+def _deltas():
+    """The paired best-gait differences, mean-force wear to integrated wear."""
+    d = np.array([pair["delta"] for pair in _robust()["objective"]["pairs"]],
+                 float)
+    return d[np.isfinite(d)]
+
+
+def _robust_ci():
+    """The 95% t interval and two-sided p for the paired differences.
+
+    Recomputed from `pairs`, deliberately not read from the file's `ci95`
+    field: that field was written with a normal multiplier once, and the whole
+    point of pinning these three numbers is that the interval cannot quietly go
+    back to being 13% too narrow. Returns (lo, hi, p).
     """
-    v = [pair[key] for pair in rep["pairs"]]
+    d = _deltas()
+    n = len(d)
+    stderr = float(d.std(ddof=1)) / np.sqrt(n)
+    t = float(stats.t.ppf(0.975, n - 1))
+    p = float(stats.ttest_1samp(d, 0.0).pvalue)
+    return float(d.mean() - t * stderr), float(d.mean() + t * stderr), p
+
+
+@functools.lru_cache(maxsize=None)
+def _n_campaigns():
+    """`robustness.N_CAMPAIGNS` - what a full `--study all` run costs.
+
+    Imported lazily and cached because importing `robustness` pulls in `pymoo`,
+    a slow import this script does not otherwise need.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    import robustness                                            # noqa: PLC0415
+    return float(robustness.N_CAMPAIGNS)
+
+
+def _spread(key):
+    """(range, sample standard deviation) of one field across the campaigns.
+
+    Both are returned because the range is what the write-up quotes as
+    description and the sd is what the verdict is decided on - the range of n
+    samples grows with n, which is the error these claims exist to prevent
+    recurring.
+    """
+    v = [c[key] for c in _unconstrained()]
     return float(max(v) - min(v)), float(np.std(v, ddof=1))
 
 
@@ -247,38 +298,69 @@ CLAIMS = [
                                    for r in _json("pareto.json")["paper_front"]])),
           0.05, inherited=True),
     # The seed-to-seed spreads RESULTS section 7 uses as its yardstick. These
-    # read `results/audit/`, not `results/robustness.json`, because the spread
-    # is measured over ten triples and the seeds study on disk was run at
-    # three - which is the whole point of the correction. `results/audit/`
-    # ships with the repo, so unlike the other inherited claims these two are
+    # used to read `results/audit/` rather than `results/robustness.json`,
+    # because the spread was measured over ten triples and the seeds study on
+    # disk had been run at three. The seeds study now runs at twenty triples,
+    # so the live claims pin the live run and the audit file is history. Like
+    # the audit file, `results/robustness.json` is tracked, so these stay
     # checkable from a fresh clone.
     Claim("R1", "docs/RESULTS.md",
-          "| Hypervolume | 0.0170 (sd 0.0052) | 0.0020 |", 0.0170,
-          lambda: _spread(_audit(), "hv_mean")[0], 5e-5, inherited=True,
-          note="ten-triple range, results/audit/objective_replication.json"),
+          "| Hypervolume | 0.0229 (sd 0.0055) | 0.0020 |", 0.0229,
+          lambda: _spread("hypervolume")[0], 5e-5, inherited=True,
+          note="twenty-triple range, results/robustness.json seeds study"),
     Claim("R2", "docs/RESULTS.md",
-          "| Best gait error | 0.0810 (sd 0.0255) | 0.0180 |", 0.0810,
-          lambda: _spread(_audit(), "best_gait_mean")[0], 5e-5, inherited=True,
-          note="ten-triple range, results/audit/objective_replication.json"),
+          "| Best gait error | 0.0939 (sd 0.0252) | 0.0180 |", 0.0939,
+          lambda: _spread("best_gait")[0], 5e-5, inherited=True,
+          note="twenty-triple range, results/robustness.json seeds study"),
     Claim("R3", "docs/RESULTS.md",
-          "| Hypervolume | 0.0170 (sd 0.0052) | 0.0020 |", 0.0052,
-          lambda: _spread(_audit(), "hv_mean")[1], 5e-5, inherited=True,
+          "| Hypervolume | 0.0229 (sd 0.0055) | 0.0020 |", 0.0055,
+          lambda: _spread("hypervolume")[1], 5e-5, inherited=True,
           note="the sd beside R1's range"),
     Claim("R4", "docs/RESULTS.md",
-          "| Best gait error | 0.0810 (sd 0.0255) | 0.0180 |", 0.0255,
-          lambda: _spread(_audit(), "best_gait_mean")[1], 5e-5, inherited=True,
+          "| Best gait error | 0.0939 (sd 0.0252) | 0.0180 |", 0.0252,
+          lambda: _spread("best_gait")[1], 5e-5, inherited=True,
           note="the sd beside R2's range"),
 
     # Section 7.2's verdict, which replaced a finding drawn from one pair.
-    Claim("R5", "docs/RESULTS.md", "Mean paired difference \u22120.0036",
-          -0.0036,
-          lambda: _audit()["delta_mean"], 5e-5, inherited=True,
-          note="the paired mean across ten seed triples"),
-    Claim("R6", "docs/RESULTS.md", "four of ten\npositive", 4.0,
-          lambda: _audit()["n_positive"], 0.0, inherited=True),
-    Claim("R7", "docs/RESULTS.md", "is the **maximum of the ten**", 0.0520,
-          lambda: _audit()["delta_max"], 5e-5, inherited=True,
-          note="the +0.052 the section used to be built on"),
+    Claim("R5", "docs/RESULTS.md", "Mean paired difference +0.0004",
+          0.0004,
+          lambda: _robust()["objective"]["delta_mean"], 5e-5, inherited=True,
+          note="the paired mean across every seed triple"),
+    Claim("R6", "docs/RESULTS.md", "nine of twenty\npositive", 9.0,
+          lambda: _robust()["objective"]["n_positive"], 0.0, inherited=True),
+    # The largest paired difference. At ten triples this was the +0.0520 the
+    # section was built on; at twenty it is a different triple's +0.0581, which
+    # is why the sentence had to change rather than just the number.
+    Claim("R7", "docs/RESULTS.md", "returns **+0.0581**", 0.0581,
+          lambda: _robust()["objective"]["delta_max"], 5e-5, inherited=True,
+          note="the largest of the twenty paired differences"),
+
+    # The interval itself, both endpoints and the p-value, recomputed with
+    # Student's t rather than read from the file. It shipped once as
+    # `mean +/- 1.96 * stderr` on ten observations - 13% too narrow, in the
+    # direction that flatters the null the section argues - so the multiplier
+    # is now pinned by these three claims rather than by a comment.
+    Claim("R8", "docs/RESULTS.md", "95% CI [−0.011, +0.012]", -0.011,
+          lambda: _robust_ci()[0], 5e-4, inherited=True,
+          note="lower endpoint, Student's t on n-1 df, not z = 1.96"),
+    Claim("R9", "docs/RESULTS.md", "95% CI [−0.011, +0.012]", 0.012,
+          lambda: _robust_ci()[1], 5e-4, inherited=True,
+          note="upper endpoint of the same t interval"),
+    Claim("R10", "docs/RESULTS.md", "paired *t*-test *p* = 0.95", 0.95,
+          lambda: _robust_ci()[2], 5e-3, inherited=True,
+          note="two-sided paired t-test against zero"),
+
+    # The campaign count README quotes beside the measured runtime. Pinned to
+    # `robustness.N_CAMPAIGNS`, which is arithmetic over SEED_TRIPLES,
+    # THRESHOLDS and BANDS rather than a literal, because this number was a
+    # hardcoded 26 in four documents and went stale in all four the moment the
+    # triples went from ten to twenty. The runtime beside it is a measurement of
+    # one run and is deliberately not pinned - re-measuring it would mean
+    # re-running the studies, and a machine-dependent number is not a claim
+    # about the linkage.
+    Claim("C1", "README.md", "(46 optimization campaigns;", 46.0,
+          _n_campaigns, 0.0,
+          note="robustness.N_CAMPAIGNS, not a literal; see PR7"),
 
     # ---- section 5, from results/feasibility.json ------------------------
     Claim("F1", "docs/RESULTS.md", "| seed 1 | 122 (20.3%) | **1** |", 20.3,
@@ -301,10 +383,10 @@ CLAIMS = [
     # Both used to carry the retracted version ("1.8x the seed-to-seed
     # spread"). Pinned here so the strong wording cannot come back without a
     # failing claim.
-    Claim("D1", "docs/DEFENDING_THIS.md", "averages **\u22120.0036**", -0.0036,
-          lambda: _audit()["delta_mean"], 5e-5, inherited=True),
-    Claim("D2", "CLAUDE.md", "gait error averages \u22120.0036", -0.0036,
-          lambda: _audit()["delta_mean"], 5e-5, inherited=True),
+    Claim("D1", "docs/DEFENDING_THIS.md", "averages **+0.0004**", 0.0004,
+          lambda: _robust()["objective"]["delta_mean"], 5e-5, inherited=True),
+    Claim("D2", "CLAUDE.md", "gait error averages +0.0004", 0.0004,
+          lambda: _robust()["objective"]["delta_mean"], 5e-5, inherited=True),
     Claim("D3", "docs/DEFENDING_THIS.md", "against `G_bd`'s 5.89 N mean", 5.89,
           lambda: float(_wear()["mean_force"][D.JOINT_NAMES.index("G_bd")]),
           0.005,

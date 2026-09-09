@@ -127,8 +127,9 @@ joint where they must agree analytically.
 
 **Do not assert either direction on "the bias cancels in the ratio" without new evidence.**
 It was asserted here for a while, then refuted from a single pair of campaigns, and §7.2 of
-`docs/RESULTS.md` now reports it measured at ten seed triples: the paired difference in best
-achievable gait error averages −0.0036, 95% CI [−0.018, +0.011], four of ten positive. No
+`docs/RESULTS.md` now reports it measured at twenty seed triples: the paired difference in
+best achievable gait error averages +0.0004, 95% CI [−0.011, +0.012] (Student's *t*, nineteen
+degrees of freedom), paired *t*-test *p* = 0.95, nine of twenty positive. No
 detectable effect on where the optimum sits, which is not the same as proof that it cancels.
 The central claim survives either way (Jansen is dominated under either wear definition), and
 the 51% overstatement of the absolute figures stands.
@@ -171,7 +172,8 @@ That the remaining gap is *noise rather than a cost* is measured, not asserted:
 `scripts/robustness.py` re-runs the unconstrained campaign under different random seeds and
 compares the spread against the gap, sweeps the constraint threshold to find where it starts
 costing something, swaps the objective to the integrated wear form, and re-runs at stance
-bands of 0.5% and 2%. Results in `docs/RESULTS.md` §7. `docs/DEFENDING_THIS.md` is the
+bands of 0.5% and 2%. At twenty seed triples that is 46 distinct campaigns and measured
+2 h 32 m on 12 workers. Results in `docs/RESULTS.md` §7. `docs/DEFENDING_THIS.md` is the
 interview-facing version of all of it.
 
 Full numbers and the argument behind each in `docs/RESULTS.md`.

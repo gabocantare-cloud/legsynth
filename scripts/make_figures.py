@@ -221,25 +221,28 @@ def fig_optimized_gif(res):
 def seed_spread_hypervolume():
     """The unconstrained seed-to-seed hypervolume spread, and how many triples.
 
-    Preferred source is `results/audit/objective_replication.json`, ten
-    unconstrained triples run to settle RESULTS.md 7.2; the seeds study in
-    `robustness.json` is the fallback. Which one is used matters more than it
-    looks: `spread()` is a range, and the range of three samples is biased low
-    by construction, so the three-triple figure (0.0024) is 7x smaller than the
-    ten-triple one (0.0170). Drawing the small band behind this curve is what
-    made the middle of the sweep look resolved when it is not.
+    Returns `(spread, n_triples)`, read from the seeds study in
+    `results/robustness.json`. It used to prefer
+    `results/audit/objective_replication.json` instead, and that preference was
+    not a stylistic one: the seeds study on disk had been run at three triples,
+    and `spread()` is a range, so the three-triple figure (0.0024) came out 7x
+    smaller than the ten-triple one (0.0170). Drawing the small band behind this
+    curve is what made the middle of the sweep look resolved when it is not.
+
+    That preference is now gone, because the reason for it is gone: the seeds
+    study is run at twenty triples, so the live file is the better estimate as
+    well as the matching one. The band behind the threshold curve and the curve
+    itself now come from the same run, which is what removes the provenance
+    caveat the legend used to have to carry. The audit file stays in the repo as
+    the historical record of what the ten-triple claim rested on; it is no
+    longer what the figures are drawn from.
     """
-    rep = load_results(os.path.join("audit", "objective_replication.json"))
-    if rep:
-        hv = [pair["hv_mean"] for pair in rep["pairs"]]
-        if len(hv) >= 2:
-            return max(hv) - min(hv), len(hv)
     rob = load_results("robustness.json") or {}
     seeds = rob.get("seeds", {})
     noise = seeds.get("seed_spread_hypervolume")
-    if noise:
-        return noise, len(seeds.get("campaigns", [])) or 3
-    return None, 0
+    if not noise:
+        return None, 0
+    return noise, seeds.get("n_triples") or len(seeds.get("unconstrained", []))
 
 
 def fig_threshold(rob):
@@ -249,8 +252,11 @@ def fig_threshold(rob):
     at 40 deg, and a cliff at 55. The seed-to-seed band is drawn behind it
     because a change smaller than the search's own run-to-run spread is not a
     change at all, and a reader is entitled to see that comparison rather than
-    be told it. Measured over ten triples the band swallows 45 and 50 deg, so
-    the figure now shows what the sweep can and cannot resolve.
+    be told it. At the measured spread the band swallows 45 and 50 deg, so the
+    figure shows what the sweep can and cannot resolve.
+
+    The band and the curve come from the same run - both are read out of
+    `results/robustness.json` - so the legend no longer has to name a source.
     """
     sweep = rob.get("threshold", {}).get("sweep")
     free = rob.get("threshold", {}).get("unconstrained")
@@ -266,6 +272,8 @@ def fig_threshold(rob):
         ax.axhspan(hv0 - noise, hv0 + noise, color="tab:blue", alpha=0.12,
                    label=f"seed-to-seed spread, unconstrained "
                          f"({n_triples} triples)")
+        print(f"threshold figure: seed band over {n_triples} triples "
+              f"(spread {noise:.4f})")
     ax.axhline(hv0, ls="--", color="tab:blue", lw=1.5,
                label=f"unconstrained ({hv0:.3f})")
     ax.plot(thresholds, hv, "o-", color="tab:red", lw=2, ms=7,

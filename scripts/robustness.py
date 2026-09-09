@@ -5,8 +5,8 @@ Each study here exists because a sentence already in `README.md` or
 comes back and the sentence stands, or it does not and the sentence changes.
 
   seeds      "The gap between the two Pareto fronts is run-to-run variation,
-             not a cost." Run the unconstrained campaign at ten different seed
-             triples and measure how far the front moves on its own. If that
+             not a cost." Run the unconstrained campaign at twenty different
+             seed triples and measure how far the front moves on its own. If that
              spread covers the constrained-vs-unconstrained gap, the sentence is
              established; if it does not, the constraint really costs something
              and the write-up is wrong.
@@ -57,6 +57,7 @@ import sys
 import time
 
 import numpy as np
+from scipy import stats
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from legsynth import optimize as O                      # noqa: E402
@@ -76,17 +77,38 @@ hypervolume = O.hypervolume
 
 THRESHOLDS = (40.0, 45.0, 50.0, 55.0)
 BANDS = (0.005, 0.01, 0.02)
-#: Seed triples for the seeds and objective studies. Ten, not three: three
-#: campaigns were run first, and the range they gave understated the true
-#: seed-to-seed spread by 7x on hypervolume and 2.7x on best gait error, because
-#: the range of n samples grows with n. Every yardstick in RESULTS section 7 is
-#: the ten-triple number, and these are the triples that produced it
-#: (results/audit/objective_replication.json). Ten triples is roughly an hour on
-#: 12 cores for the seeds study; the objective study shares its unconstrained
-#: campaigns through the cache and costs about the same again.
-SEED_TRIPLES = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11), (12, 13, 14),
-                (15, 16, 17), (18, 19, 20), (21, 22, 23), (24, 25, 26),
-                (27, 28, 29))
+#: Seed triples for the seeds and objective studies. Twenty, not ten and not
+#: three. Three came first, and the *range* they gave understated the true
+#: seed-to-seed spread by 7x on hypervolume, because the range of n samples
+#: grows with n (see `spread()`); ten fixed that and the verdict moved onto the
+#: standard deviation, which does not have that property. Twenty is here for a
+#: different reason: it is the only change that buys statistical *power*. The
+#: objective study's null rests on the paired differences, whose confidence
+#: interval narrows as 1/sqrt(n), so doubling the triples narrows it by about
+#: sqrt(2); re-running the same ten would have narrowed nothing. The first ten
+#: are unchanged so this run can be compared campaign-by-campaign against
+#: results/audit/objective_replication.json, which is the historical record of
+#: what the ten-triple claim rested on. Twenty triples is 46 unique campaigns
+#: and a few hours on 12 cores (see `N_CAMPAIGNS`); the seeds and objective
+#: studies share their unconstrained campaigns through the cache.
+SEED_TRIPLES = tuple((3 * i, 3 * i + 1, 3 * i + 2) for i in range(20))
+
+#: How many distinct campaigns a full run costs, which is not the number of
+#: `campaign()` calls the four studies make - they share work through `cached`.
+#: Written as the arithmetic rather than as a literal because this number has
+#: already gone stale once in four documents (it was 26 at ten triples), and a
+#: count that a document quotes has to come from the thing that determines it:
+#:
+#:   2 x len(SEED_TRIPLES)  the unconstrained and integrated-wear campaigns,
+#:                          shared between the seeds and objective studies
+#:   + len(THRESHOLDS)      the constrained sweep, at SEED_TRIPLES[0]; its
+#:                          40 deg row is also the seeds study's constrained one
+#:   + len(BANDS) - 1       the band study, less the 1% campaign that is the
+#:                          unconstrained one already counted above
+#:
+#: `test_the_campaign_count_matches_what_the_studies_actually_request` stubs
+#: `campaign` and counts cache keys, so this cannot drift from the truth.
+N_CAMPAIGNS = 2 * len(SEED_TRIPLES) + len(THRESHOLDS) + len(BANDS) - 1
 
 
 def campaign(label, seeds, pop, gens, n_refine, min_angle=None,
@@ -167,6 +189,12 @@ def seed_verdict(noise, gap):
     prose around it. When the two quantities are within `INCONCLUSIVE_BAND` of
     each other, this many campaigns cannot decide, so say that instead. Returns
     (verdict, spread / gap).
+
+    `noise` must be the **standard deviation** from `spread()`, not its range.
+    The range grows with the number of campaigns, so a verdict decided on it is
+    a verdict that changes when you run more of the same experiment - see
+    `spread()`. The range is still printed and recorded as description; it is
+    not what decides this.
     """
     if not (np.isfinite(noise) and np.isfinite(gap)) or gap == 0.0:
         return "inconclusive", float("nan")
@@ -203,15 +231,19 @@ def study_seeds(cfg, cache):
     noise_hv, noise_gait = noise["range"], noise_g["range"]
     gap_hv = abs(unc[0]["hypervolume"] - con["hypervolume"])
     gap_gait = abs(unc[0]["best_gait"] - con["best_gait"])
-    verdict, margin = seed_verdict(noise_hv, gap_hv)
 
-    print(f"\n  seed-to-seed spread, hypervolume : {noise_hv:.4f}"
-          f"  (sd {noise['sd']:.4f}, n={noise['n']})")
+    # The sd decides the verdict; the range is kept beside it as description.
+    verdict, sd_over_gap = seed_verdict(noise["sd"], gap_hv)
+    range_over_gap = noise_hv / gap_hv if gap_hv else float("nan")
+
+    print(f"\n  seed-to-seed spread, hypervolume : sd {noise['sd']:.4f}"
+          f"  (range {noise_hv:.4f}, n={noise['n']})")
     print(f"  constrained-vs-unconstrained gap : {gap_hv:.4f}")
-    print(f"  seed-to-seed spread, best gait   : {noise_gait:.4f}"
-          f"  (sd {noise_g['sd']:.4f}, n={noise_g['n']})")
+    print(f"  seed-to-seed spread, best gait   : sd {noise_g['sd']:.4f}"
+          f"  (range {noise_gait:.4f}, n={noise_g['n']})")
     print(f"  constrained-vs-unconstrained gap : {gap_gait:.4f}")
-    print(f"  --> verdict: {verdict}   (spread / gap = {margin:.2f})")
+    print(f"  --> verdict: {verdict}   (sd / gap = {sd_over_gap:.2f}; "
+          f"range / gap = {range_over_gap:.2f}, descriptive only)")
     if verdict == "cost":
         print("      the constraint costs something; the write-up must change")
     elif verdict == "inconclusive":
@@ -227,7 +259,9 @@ def study_seeds(cfg, cache):
                 n_triples=noise["n"],
                 constraint_gap_hypervolume=gap_hv,
                 constraint_gap_best_gait=gap_gait,
-                margin=margin, verdict=verdict)
+                sd_over_gap=sd_over_gap, range_over_gap=range_over_gap,
+                margin=sd_over_gap, verdict=verdict,
+                verdict_statistic="sd")
 
 
 # --------------------------------------------------------------------------
@@ -274,8 +308,18 @@ def study_objective(cfg, cache):
     mean_d = float(d.mean()) if n else float("nan")
     sd = float(d.std(ddof=1)) if n > 1 else float("nan")
     stderr = sd / np.sqrt(n) if n > 1 else float("nan")
-    ci = [mean_d - 1.96 * stderr, mean_d + 1.96 * stderr] if n > 1 else [
+
+    # Student's t, not 1.96. Ten campaigns is not a large sample and the
+    # population sd is not known - it is estimated from the same ten numbers -
+    # so the normal multiplier reports an interval about 13% narrower than the
+    # data support. That direction matters here: this interval is the evidence
+    # for a *null*, and a null argued from an interval that is too narrow is
+    # the one mistake this section cannot afford to make.
+    tmult = float(stats.t.ppf(0.975, n - 1)) if n > 1 else float("nan")
+    ci = [mean_d - tmult * stderr, mean_d + tmult * stderr] if n > 1 else [
         float("nan"), float("nan")]
+    tstat, pval = (stats.ttest_1samp(d, 0.0) if n > 1
+                   else (float("nan"), float("nan")))
     n_pos = int((d > 0).sum())
 
     print(f"\n  paired difference in best gait error, {n} seed triples")
@@ -284,7 +328,8 @@ def study_objective(cfg, cache):
               f"{p['best_gait_mean']:.4f} -> {p['best_gait_integrated']:.4f}"
               f"   {p['delta']:+.4f}")
     print(f"  mean {mean_d:+.4f}   sd {sd:.4f}   "
-          f"95% CI [{ci[0]:+.4f}, {ci[1]:+.4f}]   {n_pos} of {n} positive")
+          f"95% CI [{ci[0]:+.4f}, {ci[1]:+.4f}] (t_{{{n - 1}}}={tmult:.3f})   "
+          f"p {float(pval):.2f}   {n_pos} of {n} positive")
     straddles = n > 1 and ci[0] < 0.0 < ci[1]
     tail = ("no detectable effect on the reachable gait quality" if straddles
             else "the wear definition moves the reachable gait quality")
@@ -292,7 +337,11 @@ def study_objective(cfg, cache):
           f"{'straddles' if straddles else 'excludes'} zero: {tail}")
 
     return dict(pairs=pairs, n_pairs=n, delta_mean=mean_d, delta_sd=sd,
+                delta_min=float(d.min()) if n else float("nan"),
+                delta_max=float(d.max()) if n else float("nan"),
                 delta_stderr=float(stderr), ci95=[float(c) for c in ci],
+                ci95_multiplier=tmult, ci95_dist="t", ci95_df=n - 1,
+                t_stat=float(tstat), p_value=float(pval),
                 n_positive=n_pos, straddles_zero=bool(straddles),
                 mean_force=cache[("unc", SEED_TRIPLES[0], M.DEFAULT_BAND,
                                   "wear")],
@@ -377,6 +426,9 @@ def main():
     cfg = dict(pop=pop, gens=gens, n_refine=n_refine, workers=args.workers)
     print(f"NSGA-II: population {pop}, {gens} generations, "
           f"re-scored at n={n_refine}")
+    if args.study == "all":
+        print(f"{N_CAMPAIGNS} distinct campaigns, "
+              f"{len(SEED_TRIPLES)} seed triples")
 
     # Several studies want the same campaign. Compute each one once.
     cache, out, t0 = {}, {}, time.perf_counter()

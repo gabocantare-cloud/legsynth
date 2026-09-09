@@ -51,14 +51,20 @@ Ranked by how much of the repo falls over if they are wrong:
 1. **Jansen is Pareto-dominated.** The central reproduction. Survives in every study run
    so far, at every band, under either wear definition. Strongest claim in the repo.
 2. **The constraint is non-binding at 40 degrees / the residual gap is noise.** The
-   negative result. Measured at ten seed triples: a hypervolume margin of 0.0020 against
-   a spread of 0.0170, a factor of 8.5. Best supported claim in section 7. (It rested on
-   0.0020 against a three-campaign spread of 0.0024 until that spread was re-measured.)
-3. **The mean-force shortcut changes the absolute wear figures by 51% and, at ten seed
+   negative result. Measured at twenty seed triples: a hypervolume margin of 0.0020
+   against a standard deviation of 0.0055, a factor of 2.8. Best supported claim in
+   section 7. (It rested on 0.0020 against a three-campaign *range* of 0.0024 until that
+   spread was re-measured; the verdict is decided on the sd because a range grows with
+   sample size, and going from ten triples to twenty widened the range from 0.0170 to
+   0.0229 while leaving the sd near 0.0055.)
+3. **The mean-force shortcut changes the absolute wear figures by 51% and, at twenty seed
    triples, does not detectably move the optimum.** The stronger version - that it moves
    the optimum - was published off one paired campaign, withdrawn when the pair turned
-   out to be the maximum of ten differences averaging -0.0036. Watch this one in both
-   directions: the null is not evidence that the bias cancels either.
+   out to be the maximum of ten differences averaging -0.0036, and at twenty triples that
+   pair is not even the largest. The paired mean is +0.0004, 95% CI [-0.011, +0.012],
+   p = 0.95. Watch this one in both directions: the null is not evidence that the bias
+   cancels either, and note that the point estimate changed sign between ten triples and
+   twenty - do not read a direction into it.
 4. **The magnitude disagreements with Wang (2026) are real, not definitional.** Rests on
    the band sweep and the clearance investigation.
 5. **The loaded/unloaded transmission-angle distinction is what makes the extension

@@ -1,10 +1,11 @@
 # Handoff — what to do next
 
-Written after the build session, then updated by the audit session and again by the fix
-session that worked `docs/audit/FIX_PLAN.md`.
+Written after the build session, then updated by the audit session, then by the fix
+session that worked `docs/audit/FIX_PLAN.md`, and again by the session that extended the
+§7 studies from ten seed triples to twenty.
 
-**State on arrival: 91 tests passing, `ruff` clean, `scripts/verify_docs.py --slow` green at
-40 claims, nothing from the audit left unfixed, nothing pushed.** The prioritised list below
+**State on arrival: `pytest` passing, `ruff` clean, `scripts/verify_docs.py --slow` green,
+nothing from the audit or the peer review left unfixed, nothing pushed.** The prioritised list below
 is short, because the previous one is done.
 
 **Read `## Ground rules` at the bottom before changing anything.** Several decisions in this
@@ -23,28 +24,54 @@ were introduced by exactly that kind of well-meaning fix.
    to settle a contested claim; they are in `results/audit/` and they ship with the repo.
 2. ~~**fix**~~ — **done.** Every finding in [`FINDINGS.md`](audit/FINDINGS.md) was worked
    through [`FIX_PLAN.md`](audit/FIX_PLAN.md); nothing was left unfixed. `verify_docs.py
-   --slow` is green at 40 claims, `pytest` at 91, `ruff` clean.
+   --slow` is green, `pytest` passes, `ruff` is clean.
 3. **publish** — done; the repo is private at `gabocantare-cloud/legsynth`.
 
 A fourth step was added after the push: **peer review.** A reviewing session is
 asked to audit the fix session's work rather than the repo as a whole — see
 [`docs/audit/PEER_REVIEW_REQUEST.md`](audit/PEER_REVIEW_REQUEST.md), which carries
 three defects the fix session found in its own work and did not fix, the largest
-being a 95% CI computed with a normal multiplier on ten samples.
+being a 95% CI computed with a normal multiplier on ten samples. The review came
+back as [`PEER_REVIEW.md`](audit/PEER_REVIEW.md) with seven findings (PR1-PR7);
+all seven are now applied. PR1 replaced the normal multiplier with Student's *t*,
+PR3 moved the seeds verdict from the range onto the standard deviation, and PR4
+made `reproduce.py` draw the figures after the studies rather than before.
 
 **What the audit changed, in one paragraph, because you will otherwise defend the old
 version.** §7.2's headline — that the paper's mean-force wear shortcut moves the optimum —
 did not survive: measured at ten seed triples instead of one, the paired difference in best
-gait error is **−0.0036**, 95% CI **[−0.018, +0.011]**, four of ten positive, and the
-published +0.052 turned out to be the *maximum* of the ten. That is a null, in both
-directions: it is not evidence that the bias cancels either. The same twenty campaigns
-showed §7.1's seed-to-seed spread was understated 7× (0.0170, not 0.0024), which also took
-down §7.3's "expensive by 45°" design guideline — at the measured spread, 45° and 50° are
-inside noise, so §7.3 now claims only "free at 40°, impossible at 55°". §7.1's own verdict
-survived and is much better supported than before (a factor of 8.5, not 1.2). §5's "0 of
+gait error was −0.0036, four of ten positive, and the published +0.052 turned out to be the
+maximum of the ten. That is a null, in both directions: it is not evidence that the bias
+cancels either. The same twenty campaigns showed §7.1's seed-to-seed spread was understated
+7× (0.0170, not 0.0024), which also took down §7.3's "expensive by 45°" design guideline — at
+the measured spread, 45° and 50° are inside noise, so §7.3 now claims only "free at 40°,
+impossible at 55°". §7.1's own verdict survived and got much better supported. §5's "0 of
 600" became "0 or 1 of 600 across three draws", with `scripts/feasibility.py` behind it.
 What is untouched: Jansen is Pareto-dominated on every front measured, and the mean-force
 shortcut still overstates the absolute wear figures by 51%.
+
+**What doubling the sample to twenty triples then changed, which is what §7 now says.** The
+seeds and objective studies run at twenty triples, (0, 1, 2) through (57, 58, 59), and
+`results/robustness.json` is that run — 46 campaigns, 2 h 32 m on 12 workers. §7.2's null
+held and tightened: the paired difference is now **+0.0004**, 95% CI **[−0.011, +0.012]**
+(Student's *t*, nineteen degrees of freedom; *p* = 0.95), nine of twenty positive. The
+interval narrowed 30%, the sqrt(2) that doubling the sample predicts. Two things are worth
+carrying forward. The point estimate **changed sign** between ten triples and twenty, which
+is what a quantity with no signal does, and the +0.052 that the section was originally built
+on is no longer even the largest difference — (45, 46, 47) gives +0.0581. §7.1's verdict
+survived the redraw and strengthened slightly: the gap is 0.0020 against a seed-to-seed sd
+of 0.0055, a factor of **2.8** where ten triples gave 2.6. The seed-to-seed *range* grew from
+0.0170 to 0.0229 while the sd barely moved — the repo's own warning about ranges, now
+demonstrated in its own data rather than argued from theory. §7.3's yardstick moved with it:
+seed alone moves the hypervolume by 33.5% of baseline, not 24.9%, so the middle of the
+threshold sweep is further inside noise than before, not less.
+
+**And the first ten triples were re-run, not reused.** All twenty of the campaigns the audit
+had already run came back **bit-identical** — 689 numbers, maximum deviation exactly 0.0 —
+across the fix session's changes to constraint defaults and band threading. That is evidence
+the search is deterministic across those changes, and it is why the new twenty-triple numbers
+can be compared against the old ten-triple ones as a genuine increase in sample rather than
+as two different experiments.
 
 The reason for the separation is worth knowing, because it is the whole point: this session's
 documentation and its `results/*.json` were produced by the *same* AI session, so an auditor
@@ -105,17 +132,21 @@ and to recommend that an overstated finding be weakened or deleted.
 
 ## P2 — Real work, if there is time
 
-7. ~~**The seed-spread estimate in §7.1 is three campaigns.**~~ **Done by the audit.** It is
-   now measured at ten seed triples (hypervolume spread 0.0170, best gait 0.0810), from the
-   twenty campaigns in `results/audit/objective_replication.json`. §7.1's verdict survived and
-   got stronger: the gap is 0.0020 against 0.0170, a factor of 8.5.
+7. ~~**The seed-spread estimate in §7.1 is three campaigns.**~~ **Done by the audit, then
+   doubled.** It is now measured at twenty seed triples (hypervolume spread 0.0229, sd 0.0055;
+   best gait 0.0939, sd 0.0252), from the 46 campaigns in `results/robustness.json`. §7.1's
+   verdict survived both widenings: the gap is 0.0020 against an sd of 0.0055, a factor of
+   2.8.
 
 8. **Find the knee in §7.3 properly, and this is now the biggest open question in §7.** The
-   threshold sweep is one campaign per threshold, and at the measured seed spread (24.9% of
+   threshold sweep is one campaign per threshold, and at the measured seed spread (33.5% of
    the hypervolume baseline) everything between 40° and 50° is inside noise. Only "free at
    40°" and "impossible at 55°" are resolved. Repeating the sweep at **ten seed triples per
-   threshold** — about 2 hours — would locate the knee instead of stating that this data
-   cannot; sampling 41–44° on top of that would put it to a degree.
+   threshold** is 40 campaigns, about two and a quarter hours at the rate the twenty-triple
+   run measured (200 s per campaign on 12 workers); that would locate the knee instead of
+   stating that this data cannot, and sampling 41–44° on top of that would put it to a
+   degree. Note the spread grew when the sample doubled, so this is a slightly harder target
+   than it looked.
 
 9. **The ground-clearance investigation has an answer now — decide what to do with it.**
    `scripts/clearance_fit.py` and `results/clearance_fit.json` hold it, written up in
@@ -205,11 +236,15 @@ Every one of these looks like a bug until you know the reason. All are load-bear
   upgraded into a claimed benefit — the honest null, plus the threshold curve in §7.3 and the
   loaded/unloaded distinction in §4, is a stronger story than an overstated win.
 - **Do not re-assert either direction on "the wear bias cancels in the ratio".** The
-  objective-swap comparison was measured at ten seed triples and came back null: paired
-  difference −0.0036 in best gait error, 95% CI [−0.018, +0.011]. Do not re-assert movement of
-  the optimum without new evidence — and do not upgrade the null into "it cancels" either, as
-  the interval still admits ±0.018. Jansen stays dominated under either wear definition, so
+  objective-swap comparison was measured at twenty seed triples and came back null: paired
+  difference +0.0004 in best gait error, 95% CI [−0.011, +0.012], *p* = 0.95. Do not re-assert
+  movement of the optimum without new evidence — and do not upgrade the null into "it cancels"
+  either, as the interval still admits ±0.012. The point estimate changed sign between ten
+  triples and twenty; do not read a direction into it. Jansen stays dominated under either wear definition, so
   the paper's central claim survives, and the 51% overstatement of the absolute wear figures
   is a separate measurement that stands.
-- **Do not hardcode the test count in prose.** It went stale in three documents at once. The
-  README quotes it beside the `pytest` line; nowhere else should.
+- **Do not hardcode any count a command prints.** The test count went stale in three
+  documents at once; the claim count in this file went stale the same way, one commit after
+  the fix plan asked for more claims. Test counts, claim counts, campaign counts in prose —
+  say "`pytest` passes" and "`verify_docs.py --slow` is green" and let the command print the
+  number. The README quotes the test count beside the `pytest` line; nowhere else should.

@@ -241,23 +241,39 @@ def test_the_stance_band_reaches_the_statics_as_well_as_the_metrics():
     assert wear[2] / wear[0] > 1.15, (
         "and the effect should be sizeable, not rounding")
 
-    # `constraints.check` is the other entry point that takes a band, and it
-    # dropped it for a while: it called `transmission_angles` without one, so it
-    # answered for the default band whatever it was asked. A wider band counts
-    # more of the turn as stance, which can only add samples to the minimum, so
-    # the loaded angle must be non-increasing in the band, and it has to move
-    # somewhere. It does not move between 0.5% and 2% - Jansen's worst loaded
-    # angle sits well inside the stance window at every band that narrow - so
-    # the check has to reach out to a band wide enough to pull shallower
-    # samples in.
-    leg = O.leg_from_vector(x)
-    mu = [C.check(leg, n=360, band=b)["min_transmission_angle"]
-          for b in (0.01, 0.1, 0.2)]
-    assert mu[0] >= mu[1] >= mu[2], (
-        "the loaded minimum angle must not rise as stance widens")
-    assert mu[0] - mu[2] > 5.0, (
-        "check() barely moved across a 20x band change, so band is being "
-        "dropped between check() and transmission_angles")
+
+
+def test_check_forwards_the_band_to_transmission_angles(monkeypatch):
+    """`constraints.check` must pass its `band` on, at the study's own bands.
+
+    `check` dropped the band for a while: it called `transmission_angles`
+    without one, so it answered for the default band whatever it was asked.
+    The temptation is to test that by reading the number back, but Jansen's
+    worst loaded angle sits well inside the stance window at 0.5%, 1% and 2%
+    alike - `min_transmission_angle` is 42.72 deg at all three - so a numeric
+    test has to reach out to a 10-20% stance window to see anything move, and
+    then it is testing a band the robustness study never runs at.
+
+    So assert the forwarding directly, at the bands `robustness.py` actually
+    sweeps. This fails if the argument is dropped *or* silently replaced by the
+    default, which is the failure that shipped.
+    """
+    seen = []
+    real = C.transmission_angles
+
+    def spy(leg, n=None, pts=None, band=None):
+        seen.append(band)
+        return real(leg, n, pts=pts, band=band)
+
+    monkeypatch.setattr(C, "transmission_angles", spy)
+
+    leg = O.leg_from_vector(JANSEN.copy())
+    for b in (0.005, 0.01, 0.02):
+        seen.clear()
+        C.check(leg, n=360, band=b)
+        assert seen == [b], (
+            f"check(band={b}) forwarded {seen} to transmission_angles; the "
+            f"band is being dropped or defaulted between the two")
 
 
 def test_jansen_is_still_the_anchor_under_the_integrated_wear_objective():

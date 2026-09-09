@@ -55,7 +55,12 @@ N_DESIGNS = 600
 #: story.
 SEEDS = (0, 1, 2)
 
-#: Relative jitter on each of Jansen's ten lengths for the second experiment.
+#: Standard deviation of the independent Gaussian relative jitter applied to
+#: each of Jansen's ten lengths in the second experiment. This is a sigma, not a
+#: bound: a normal draw puts about a third of the perturbations outside +/-2%,
+#: and roughly one in twenty outside +/-4%. Say "sigma = 2%" wherever this
+#: experiment is summarised - "jittered by 2%" reads as a bounded perturbation
+#: and would describe a different experiment.
 JITTER = 0.02
 
 
@@ -66,7 +71,12 @@ def draw_uniform(n, seed):
 
 
 def draw_jitter(n, seed, jitter=JITTER):
-    """`n` design vectors from Jansen's lengths, each perturbed by `jitter`."""
+    """`n` design vectors from Jansen's lengths under Gaussian relative jitter.
+
+    Each length is drawn independently as `base * (1 + Normal(0, jitter))` and
+    then clipped into the paper's +/-30% box. `jitter` is the standard deviation
+    of that relative perturbation, not a bound on it - see `JITTER`.
+    """
     rng = np.random.default_rng(seed)
     base = np.array([HOLY[k] for k in DESIGN_KEYS], float)
     X = base * (1.0 + rng.normal(0.0, jitter, size=(n, len(base))))

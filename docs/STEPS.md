@@ -196,7 +196,8 @@ because it is where the write-up was wrong before.
 
 **Done — `scripts/robustness.py` and `scripts/clearance_fit.py`.** Written up in §7 and §8 of
 [`RESULTS.md`](RESULTS.md). Neither runs by default: `python scripts/reproduce.py
---with-studies` includes them, and together they are about an hour.
+--with-studies` includes them. `robustness.py` is the expensive one: 46 campaigns, measured
+at 2 h 32 m on 12 workers.
 
 **The lesson, which is the reason this step exists.** Two of the four robustness studies came
 back confirming the sentence they were testing. One came back *against* it — and then, when it
@@ -205,6 +206,12 @@ single campaign compared against a spread estimated from three campaigns is not 
 the range of a small sample understates the spread by construction, and every comparison made
 against it leans toward "the difference is real". Run the thing enough times to see its own
 noise before you quote a difference.
+
+The studies were later doubled again, to twenty seed triples, and that is worth knowing for
+the same reason. The seed-to-seed *range* grew from 0.0170 to 0.0229 purely from drawing more
+samples, while the standard deviation over those campaigns barely moved (0.0052 to 0.0055).
+The warning above stopped being a theoretical argument and became something measured in this
+repo's own data.
 
 **You can explain:** which of your claims are measured, which are asserted, and what the
 search's own run-to-run noise is. That is the difference between a result and a story.

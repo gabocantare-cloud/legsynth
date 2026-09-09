@@ -23,8 +23,8 @@ same time — reproduces cleanly, and survives a four-fold change in the one def
 everything rests on. Three of its supporting numbers do not reproduce, and its baseline row
 turns out to be unreachable by any single consistent model — from the stance side and from the
 geometry side independently. One of its methodological shortcuts costs about fifteen times
-what it claims in the absolute wear figures, though at ten seed triples it does not detectably
-move where the optimum sits. We also added the check the paper
+what it claims in the absolute wear figures, though at twenty seed triples it does not
+detectably move where the optimum sits. We also added the check the paper
 never makes: a linkage that binds on itself is a wear problem, and nobody tested for it. That
 check came back negative at the standard threshold, which we report as a negative — and then
 swept the threshold to find where it stops being free.
@@ -91,21 +91,30 @@ also converged: going from 360 to 5760 crank samples moves it by 0.1%.
 conclusions are ratios between designs, and a bias applying to every design cancels in a
 ratio. We measured that instead of assuming it. Jansen is Pareto-dominated under either wear
 definition, so the central claim is untouched. And re-running the whole optimization against
-the integrated form, at **ten seed triples**, does not detectably move the reachable gait
-quality: the paired difference in best achievable gait error averages **−0.0036**, sd 0.0231,
-95% CI **[−0.018, +0.011]**, with four of ten positive. (Quote the gait axis, not the wear
+the integrated form, at **twenty seed triples**, does not detectably move the reachable gait
+quality: the paired difference in best achievable gait error averages **+0.0004**, sd 0.0247,
+95% CI **[−0.011, +0.012]**, paired *t*-test *p* = 0.95, with nine of twenty positive.
+(The interval is Student's *t* on nineteen degrees of freedom. It shipped once as
+`mean ± 1.96 × stderr`, which is too narrow on ten observations, and too narrow
+in the direction that flatters this null — worth knowing if someone quotes the old
+numbers back at you. The sample was ten for a while; doubling it to twenty narrowed the
+interval by 30%, close to the 29% the sample size alone predicts, and the reason it was
+worth the compute.) (Quote the gait axis, not the wear
 axis: gait is computed identically in both campaigns, whereas the two wear numbers reduce two
 different definitions of wear and are not directly comparable.) §7.2 of `RESULTS.md`.
 
-This is a null result, and it should be stated as one in both directions. Ten paired triples
-centred on zero remove the evidence that the shortcut *moves* the optimum; they do not prove
-the bias cancels, because the interval still admits ±0.018.
+This is a null result, and it should be stated as one in both directions. Twenty paired
+triples centred on zero remove the evidence that the shortcut *moves* the optimum; they do not
+prove the bias cancels, because the interval still admits ±0.012. Worth knowing if you are
+pressed on it: the point estimate was −0.0036 at ten triples and is +0.0004 at twenty. It
+changed sign, which is what a quantity with no signal does.
 
 That is worth having ready, because "doesn't it all cancel in the ratio?" is the first thing a
-sharp reader will say. The measured answer: *we tested it at ten seed triples and found no
+sharp reader will say. The measured answer: *we tested it at twenty seed triples and found no
 detectable effect on the reachable gait quality — what does survive is that the absolute wear
 figures are high by 51%.* An earlier version of this document answered "mostly, but not
-enough", off a single pair of campaigns that turned out to be the largest of ten.
+enough", off a single pair of campaigns that turned out to be the largest of ten — and, once
+twenty were drawn, only the second largest of twenty.
 
 **The pretty corollary.** The three pins that turn a full revolution take 49% of the total
 wear between them, and it is not because they carry the most load — `O` carries 4.03 N mean
@@ -354,7 +363,9 @@ next piece of actual work, and it is a paper rather than a commit.
 40 → 45 → 50 → 55, one campaign per row, and at the measured seed-to-seed spread
 everything between 40° and 50° is inside noise — only "free at 40°" and "impossible at 55°"
 are resolved. Repeating the sweep at ten seed triples per threshold, and sampling 41–44°,
-would say where the price actually begins instead of stating that this data cannot.
+would say where the price actually begins instead of stating that this data cannot. At the
+rate the §7 studies measured — 200 s per campaign on 12 workers — that is about two and a
+quarter hours.
 
 **"What is the weakest part of this repo?"** The wear model is Archard with a single unknown
 coefficient and a quasi-static force solve — no lubrication regime, no surface finish, no
